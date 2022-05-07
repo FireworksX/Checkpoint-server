@@ -21,11 +21,18 @@
   "author": "Dantis Mai <mtd.maithanhdanh@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/express-validator": "^3.0.0",
+    "bcrypt": "^5.0.1",
     "commander": "^8.3.0",
+    "dayjs": "^1.11.1",
     "express": "^4.17.1",
     "express-validation": "^4.1.0",
+    "http-status": "^1.5.2",
+    "jwt-simple": "^0.5.6",
     "module-alias": "^2.2.2",
+    "mongoose": "^6.3.2",
     "tslib": "~2.3.0",
+    "uuid": "^8.3.2",
     "winston": "^3.3.3"
   },
   "devDependencies": {

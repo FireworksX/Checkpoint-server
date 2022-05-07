@@ -1,4 +1,5 @@
 import express from 'express';
+import apiRouter from '@server/routes/v1';
 
 const createServer = (): express.Application => {
   const app = express();
@@ -11,6 +12,8 @@ const createServer = (): express.Application => {
   app.get('/health', (_req, res) => {
     res.send('UP');
   });
+
+  app.use('/api/v1', apiRouter);
 
   return app;
 };

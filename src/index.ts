@@ -10,17 +10,18 @@ import { createServer } from '@config/express';
 import { AddressInfo } from 'net';
 import http from 'http';
 import { logger } from '@config/logger';
+import { createMongooseConnection } from '@config/mongoose';
 
 const host = process.env.HOST || '0.0.0.0';
 const port = process.env.PORT || '5000';
 
 async function startServer() {
+  await createMongooseConnection();
+
   const app = createServer();
   const server = http.createServer(app).listen({ host, port }, () => {
     const addressInfo = server.address() as AddressInfo;
-    logger.info(
-      `Server ready at http://${addressInfo.address}:${addressInfo.port}`,
-    );
+    logger.info(`Server ready at http://${addressInfo.address}:${addressInfo.port}`);
   });
 
   const signalTraps: NodeJS.Signals[] = ['SIGTERM', 'SIGINT', 'SIGUSR2'];
