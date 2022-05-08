@@ -5,6 +5,7 @@
 - Full typescript coverage
 - Mongoose connection
 - Request validation
+- JWT authorization
 
 ### Bootstrap
 Development
