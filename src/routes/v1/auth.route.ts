@@ -6,8 +6,12 @@ import { validationMiddleware } from '@server/utils/validationMiddleware';
 const router = express.Router();
 
 router
-  .route('/register/phone')
-  .post(...authValidation.registerPhone, validationMiddleware, authController.registerPhone);
+  .route('/register')
+  .post(...authValidation.register, validationMiddleware, authController.register);
+
+router
+  .route('/phoneValidation')
+  .post(...authValidation.phoneValidation, validationMiddleware, authController.phoneValidation);
 
 router
   .route('/login')

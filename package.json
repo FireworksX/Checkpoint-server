@@ -21,6 +21,7 @@
   "author": "Dantis Mai <mtd.maithanhdanh@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/bcrypt": "^5.0.0",
     "@types/express-validator": "^3.0.0",
     "bcrypt": "^5.0.1",
     "commander": "^8.3.0",

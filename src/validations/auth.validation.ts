@@ -2,6 +2,7 @@ import { body } from 'express-validator';
 import { phoneValidator } from '@server/validations/phone.validator';
 
 export default {
-  registerPhone: [body('phone').custom(phoneValidator)],
-  login: [body('phone').custom(phoneValidator)],
+  register: [body('phone').custom(phoneValidator)],
+  phoneValidation: [body('phone').custom(phoneValidator)],
+  login: [body('phone').custom(phoneValidator), body('password')],
 };

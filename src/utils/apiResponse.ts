@@ -4,7 +4,7 @@ import httpStatus from 'http-status';
 interface ErrorOptions {
   name?: Error['name'];
   message?: string;
-  errors?: string[];
+  errors?: { field: string; location: string; messages: string | string[] }[];
   status?: number;
   isPublic?: boolean;
   isOperational?: true; // This is required since bluebird 4 doesn't append it anymore.
@@ -41,6 +41,6 @@ export default {
     const ErrorType = new Error(proxyOptions.message);
     ErrorType.name = proxyOptions.name;
 
-    return ErrorType
+    return ErrorType;
   },
 };
