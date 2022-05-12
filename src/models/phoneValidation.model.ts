@@ -33,7 +33,7 @@ phoneValidationSchema.statics = {
       if (dayjs(findTicket.expires).isAfter(dayjs())) {
         return findTicket;
       } else {
-        this.findOneAndRemove({ phone });
+        await PhoneValidationModel.remove({ phone });
       }
     }
 
@@ -44,6 +44,8 @@ phoneValidationSchema.statics = {
       expires,
     });
     await tokenObject.save();
+
+    this.remove
     return tokenObject;
   },
 };
