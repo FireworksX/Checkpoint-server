@@ -31,7 +31,7 @@ export default {
 
   reject: <T>(message?: string): ApiResponseBody<T> => {
     return {
-      success: true,
+      success: false,
       message,
     };
   },

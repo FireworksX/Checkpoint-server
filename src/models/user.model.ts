@@ -6,6 +6,7 @@ import { vars } from '@server/config/vars';
 import apiResponse from '@server/utils/apiResponse';
 import httpStatus from 'http-status';
 import { v4 as uuidv4 } from 'uuid';
+import { omitBy } from '@server/utils/omitBy';
 
 const roles = ['user', 'guide', 'admin'] as const;
 const transformFields = ['_id', 'username', 'phone', 'role', 'createdAt'] as const;
@@ -21,7 +22,7 @@ interface FindAndGenerateTokenOptions {
 
 export type TransformUser = {
   [P in keyof Pick<User, typeof transformFields[number]>]: User[P];
-}
+};
 
 export interface User extends Document {
   _id: any;
@@ -36,8 +37,13 @@ export interface User extends Document {
   passwordMatches(): Promise<boolean>;
 }
 
+type UserFields = Exclude<{
+  [P in keyof User]: User[P] extends () => any ? never : User[P]
+}, never>
+
 export interface UserModel extends Model<User> {
-  get(findParams?: keyof User): Promise<User>;
+  get(findParams?: Partial<UserFields>): Promise<User>;
+  list(params?: Partial<UserFields> & { page?: number; perPage?: number }): Promise<User>;
   findAndGenerateToken(options: FindAndGenerateTokenOptions): Promise<{ user: User; accessToken: string }>;
 }
 
@@ -149,15 +155,15 @@ userSchema.statics = {
     throw apiResponse.error(err);
   },
 
-  // list({ page = 1, perPage = 30, userName, role, accounts }) {
-  //   const options = omitBy({ userName, role, accounts }, isNil);
-  //
-  //   return this.find(options)
-  //     .sort({ createdAt: -1 })
-  //     .skip(perPage * (page - 1))
-  //     .limit(perPage)
-  //     .exec();
-  // },
+  list({ page = 1, perPage = 30, ...restParams }) {
+    const options = omitBy(restParams, (value) => !!value);
+
+    return this.find(options)
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
+  },
 
   checkDuplicateEmail(error) {
     if (error.name === 'MongoError' && error.code === 11000) {
