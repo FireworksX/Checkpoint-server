@@ -1,7 +1,8 @@
 import { ApiResponseBody } from '@server/interfaces/ApiInterfaces';
 import httpStatus from 'http-status';
 
-interface ErrorOptions {
+export interface ErrorOptions {
+  isError: boolean;
   name?: Error['name'];
   message?: string;
   errors?: { field: string; location: string; messages: string | string[] }[];
@@ -12,6 +13,7 @@ interface ErrorOptions {
 }
 
 const DEFAULT_ERROR_OPTIONS: ErrorOptions = {
+  isError: true,
   name: 'Error',
   message: 'Internal Server Error',
   errors: [],
@@ -29,18 +31,15 @@ export default {
     };
   },
 
-  reject: <T>(message?: string): ApiResponseBody<T> => {
+  reject: <T>(message?: string, error?: ErrorOptions): ApiResponseBody<T> => {
     return {
       success: false,
       message,
+      error,
     };
   },
 
-  error: (options: ErrorOptions) => {
-    const proxyOptions = { ...DEFAULT_ERROR_OPTIONS, ...options };
-    const ErrorType = new Error(proxyOptions.message);
-    ErrorType.name = proxyOptions.name;
-
-    return ErrorType;
+  error: (options: Omit<ErrorOptions, 'isError'>) => {
+    return { ...DEFAULT_ERROR_OPTIONS, ...options };
   },
 };

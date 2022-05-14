@@ -4,7 +4,7 @@ import apiResponse from '@server/utils/apiResponse';
 import { TransformUser, UserModel } from '@server/models/user.model';
 
 export default {
-  getUser: async (req, res: AppResponse<TransformUser>) => {
+  getUser: async (req, res: AppResponse<TransformUser>, next) => {
     try {
       const { username } = req.params;
       const findUser = (await UserModel.get({ username })).transform()
@@ -12,7 +12,7 @@ export default {
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(findUser));
     } catch (e) {
-      return res.json(apiResponse.reject(e.message));
+      return next(e);
     }
   },
 };

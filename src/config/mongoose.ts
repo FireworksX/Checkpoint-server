@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { vars } from '@server/config/vars';
+import vars from '@server/config/vars';
 import { logger } from '@config/logger';
 
 const { mongo, env } = vars;

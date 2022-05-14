@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { vars } from '@config/vars';
+import vars from '@config/vars';
 import { RefreshToken, RefreshTokenGenerateUser } from '@server/models/refreshToken.model';
 
 export async function generateTokenResponse(user: RefreshTokenGenerateUser, accessToken: string) {
@@ -8,6 +8,7 @@ export async function generateTokenResponse(user: RefreshTokenGenerateUser, acce
   const expiresIn = dayjs()
     .add(+vars.jwtExpirationInterval, 'minutes')
     .unix();
+
   return {
     tokenType,
     accessToken,
@@ -16,6 +17,4 @@ export async function generateTokenResponse(user: RefreshTokenGenerateUser, acce
   };
 }
 
-export type GenerateTokenResponse<T = ReturnType<typeof generateTokenResponse>> = T extends Promise<infer R>
-  ? R
-  : T;
+export type GenerateTokenResponse<T = ReturnType<typeof generateTokenResponse>> = T extends Promise<infer R> ? R : T;

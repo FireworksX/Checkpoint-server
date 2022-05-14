@@ -1,14 +1,14 @@
 import mongoose, { Model, Document } from 'mongoose';
 import dayjs from 'dayjs';
 import jwt from 'jwt-simple';
-import { vars } from '@server/config/vars';
+import vars from '@server/config/vars';
 // import bcrypt from 'bcrypt';
 import apiResponse from '@server/utils/apiResponse';
 import httpStatus from 'http-status';
 import { v4 as uuidv4 } from 'uuid';
 import { omitBy } from '@server/utils/omitBy';
 
-const roles = ['user', 'guide', 'admin'] as const;
+const roles = ['user', 'admin'] as const;
 const transformFields = ['_id', 'username', 'phone', 'role', 'createdAt'] as const;
 
 interface FindAndGenerateTokenOptions {
@@ -37,11 +37,15 @@ export interface User extends Document {
   passwordMatches(): Promise<boolean>;
 }
 
-type UserFields = Exclude<{
-  [P in keyof User]: User[P] extends () => any ? never : User[P]
-}, never>
+type UserFields = Exclude<
+  {
+    [P in keyof User]: User[P] extends () => any ? never : User[P];
+  },
+  never
+>;
 
 export interface UserModel extends Model<User> {
+  roles(): typeof roles,
   get(findParams?: Partial<UserFields>): Promise<User>;
   list(params?: Partial<UserFields> & { page?: number; perPage?: number }): Promise<User>;
   findAndGenerateToken(options: FindAndGenerateTokenOptions): Promise<{ user: User; accessToken: string }>;
@@ -112,7 +116,7 @@ userSchema.method({
  * Statics
  */
 userSchema.statics = {
-  // roles,
+  roles: () => roles,
 
   async get(findQuery) {
     const user = await this.findOne(findQuery);
