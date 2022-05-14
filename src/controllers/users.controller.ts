@@ -15,4 +15,13 @@ export default {
       return next(e);
     }
   },
+
+  loggedIn: async (req, res: AppResponse<TransformUser>, next) => {
+    try {
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(req.user.transform()));
+    } catch (e) {
+      return next(e);
+    }
+  },
 };

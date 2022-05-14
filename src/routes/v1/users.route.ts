@@ -5,6 +5,8 @@ import { authorize } from '@server/middleware/auth.middleware';
 
 const router = express.Router();
 
-router.route('/:username').get(authorize(), usersValidation.getUser, usersController.getUser);
+router.route('/detail/:username').get(authorize(), usersValidation.getUser, usersController.getUser);
+
+router.route('/profile').get(authorize(), usersController.loggedIn);
 
 export default router;
