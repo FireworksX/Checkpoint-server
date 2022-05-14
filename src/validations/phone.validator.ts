@@ -1,16 +1,20 @@
 import { CustomValidator } from "express-validator";
 
 export const phoneValidator: CustomValidator = (value: any) => {
+  if (!value) {
+    throw 'Error validation of phone number'
+  }
+
   let newValue = value
   if (typeof newValue === 'number') {
     newValue = newValue.toString()
   }
 
-  if (typeof value === 'string') {
-    if (value.length > 10 && value.length < 13) {
+  if (typeof newValue === 'string') {
+    if (newValue.length > 10 && newValue.length < 13) {
       return true
     }
   }
 
-  return 'Error validation of phone number'
+  throw 'Error validation of phone number'
 }

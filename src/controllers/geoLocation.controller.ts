@@ -5,7 +5,7 @@ import { apiService } from '@server/services/apiService';
 
 
 export default {
-  getLocationByIp: async (req, res: AppResponse<any>) => {
+  getLocationByIp: async (req, res: AppResponse<any>, next) => {
     try {
       const { ip } = req.query;
       const location = await apiService().getLocationByIp(ip);
@@ -13,7 +13,7 @@ export default {
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(location));
     } catch (e) {
-      return res.json(apiResponse.reject(e.message));
+      return next(e)
     }
   },
 };

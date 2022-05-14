@@ -2,19 +2,19 @@ import mongoose, { Model, Document } from 'mongoose';
 import dayjs from 'dayjs';
 import jwt from 'jwt-simple';
 import vars from '@server/config/vars';
-// import bcrypt from 'bcrypt';
 import apiResponse from '@server/utils/apiResponse';
 import httpStatus from 'http-status';
 import { v4 as uuidv4 } from 'uuid';
 import { omitBy } from '@server/utils/omitBy';
+import { PhoneValidationModel } from '@server/models/phoneValidation.model';
 
 const roles = ['user', 'admin'] as const;
 const transformFields = ['_id', 'username', 'phone', 'role', 'createdAt'] as const;
 
 interface FindAndGenerateTokenOptions {
   phone: string;
-  password: string;
-  refreshObject: {
+  code: string;
+  refreshObject?: {
     expires: number;
     phone: string;
   };
@@ -34,7 +34,7 @@ export interface User extends Document {
   createdAt: Date;
   transform(): TransformUser;
   token(): string;
-  passwordMatches(): Promise<boolean>;
+  codeMatches(): Promise<boolean>;
 }
 
 type UserFields = Exclude<
@@ -107,8 +107,10 @@ userSchema.method({
     );
   },
 
-  async passwordMatches() {
-    return true; //await bcrypt.compare(password, this.password);
+  async codeMatches(code: string) {
+    const findTicket = await PhoneValidationModel.get(this.phone)
+
+    return findTicket?.code === code
   },
 });
 
@@ -130,7 +132,7 @@ userSchema.statics = {
   },
 
   async findAndGenerateToken(options: FindAndGenerateTokenOptions) {
-    const { phone, password, refreshObject } = options;
+    const { phone, code, refreshObject } = options;
     if (!phone) {
       throw new Error('An phone is required to generate a token');
     }
@@ -141,11 +143,11 @@ userSchema.statics = {
       isPublic: true,
       message: '',
     };
-    if (password) {
-      if (user && (await user.passwordMatches(password))) {
+    if (code) {
+      if (user && (await user.codeMatches(code))) {
         return { user, accessToken: user.token() };
       }
-      err.message = 'Incorrect email or password';
+      err.message = 'Incorrect phone or validation code';
     } else if (refreshObject && refreshObject.phone === phone) {
       if (dayjs(refreshObject.expires).isBefore(dayjs())) {
         err.message = 'Invalid refresh token.';
@@ -153,7 +155,7 @@ userSchema.statics = {
         return { user, accessToken: user.token() };
       }
     } else {
-      err.message = 'Incorrect email or refreshToken';
+      err.message = 'Incorrect phone or refreshToken';
     }
 
     throw apiResponse.error(err);

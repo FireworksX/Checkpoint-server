@@ -7,18 +7,18 @@ import { omit } from '@server/utils/omit';
 import { PhoneValidationModel, PhoneValidation } from '@server/models/phoneValidation.model';
 
 export default {
-  phoneValidation: async (req, res: AppResponse<PhoneValidation>) => {
+  phoneValidation: async (req, res: AppResponse<PhoneValidation>, next) => {
     try {
       const { phone } = req.body;
       const validationTicket = await PhoneValidationModel.generate(phone);
       res.status(httpStatus.CREATED);
       return res.json(apiResponse.resolve(validationTicket));
     } catch (e) {
-      return res.json(apiResponse.reject(e.message));
+      return next(e)
     }
   },
 
-  register: async (req, res: AppResponse<{ token: GenerateTokenResponse; user: TransformUser }>) => {
+  register: async (req, res: AppResponse<{ token: GenerateTokenResponse; user: TransformUser }>, next) => {
     try {
       const userData = omit(req.body, 'role');
       const user = await new UserModel(userData).save();
@@ -27,7 +27,7 @@ export default {
       res.status(httpStatus.CREATED);
       return res.json(apiResponse.resolve({ token, user: userTransformed }));
     } catch (e) {
-      return res.json(apiResponse.reject(e.message));
+      return next(e);
     }
   },
 
@@ -39,8 +39,8 @@ export default {
 
       const userTransformed = user.transform();
       return res.json(apiResponse.resolve({ token, user: userTransformed }));
-    } catch (error) {
-      return next(error);
+    } catch (e) {
+      return next(e);
     }
   },
 };
