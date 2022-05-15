@@ -1,10 +1,15 @@
 import mongoose, { Model, Document, Types } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
+import { TransformCategoryField } from '@server/models/categoryField.model';
 
-const transformFields = ['_id', 'slug', 'name', 'createdAt'] as const;
+const transformFields = ['_id', 'slug', 'name', 'fields', 'createdAt'] as const;
 
 export type TransformCategory = {
   [P in keyof Pick<Category, typeof transformFields[number]>]: Category[P];
+};
+
+export type PopulateTransformCategory = Omit<TransformCategory, 'fields'> & {
+  fields: TransformCategoryField[];
 };
 
 export interface Category extends Document {
@@ -14,6 +19,7 @@ export interface Category extends Document {
   fields: Types.ObjectId[];
   createdAt: Date;
   transform(): TransformCategory;
+  populateTransform(): Promise<PopulateTransformCategory>;
 }
 
 export type CategoryFields = Exclude<
@@ -56,6 +62,17 @@ categorySchema.method({
 
     transformFields.forEach((field) => {
       transformed[field] = this[field];
+    });
+
+    return transformed;
+  },
+
+  async populateTransform() {
+    const transformed = {};
+    const selfData = await this.populate('fields');
+
+    transformFields.forEach((field) => {
+      transformed[field] = selfData[field];
     });
 
     return transformed;

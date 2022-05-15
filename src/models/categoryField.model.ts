@@ -39,10 +39,7 @@ const categoryFieldSchema = new mongoose.Schema<CategoryField>(
       type: String,
       maxlength: 128,
       trim: true,
-    },
-    value: {
-      type: mongoose.Schema.Types.Mixed,
-    },
+    }
   },
   {
     timestamps: true,

@@ -1,14 +1,19 @@
 import httpStatus from 'http-status';
 import { AppRequestBody, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
-import { CategoryModel, TransformCategory, CategoryFields } from '@server/models/category.model';
+import {
+  CategoryModel,
+  TransformCategory,
+  CategoryFields,
+  PopulateTransformCategory,
+} from '@server/models/category.model';
 import { omit } from '@server/utils/omit';
 
 export default {
   getDetail: async (req, res: AppResponse<TransformCategory>, next) => {
     try {
       const { slug } = req.params;
-      const findCategory = (await CategoryModel.get({ slug })).transform();
+      const findCategory = await (await CategoryModel.get({ slug })).transform();
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(findCategory));
@@ -17,10 +22,10 @@ export default {
     }
   },
 
-  create: async (req, res: AppResponse<TransformCategory>, next) => {
+  create: async (req, res: AppResponse<PopulateTransformCategory>, next) => {
     try {
       const options = req.body;
-      const newCategory = (await new CategoryModel(options).save()).transform();
+      const newCategory = await (await new CategoryModel(options).save()).populateTransform();
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(newCategory));
@@ -31,12 +36,14 @@ export default {
 
   update: async (
     req: AppRequestBody<{ findSlug: string } & Partial<CategoryFields>>,
-    res: AppResponse<TransformCategory>,
+    res: AppResponse<PopulateTransformCategory>,
     next,
   ) => {
     try {
       const options = omit(req.body, 'findSlug');
-      const newCategory = (await CategoryModel.updateCategory({ slug: req.body.findSlug }, options)).transform();
+      const newCategory = await (
+        await CategoryModel.updateCategory({ slug: req.body.findSlug }, options)
+      ).populateTransform();
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(newCategory));
@@ -44,13 +51,4 @@ export default {
       return next(e);
     }
   },
-  //
-  // loggedIn: async (req, res: AppResponse<TransformUser>, next) => {
-  //   try {
-  //     res.status(httpStatus.OK);
-  //     return res.json(apiResponse.resolve(req.user.transform()));
-  //   } catch (e) {
-  //     return next(e);
-  //   }
-  // },
 };
