@@ -45,7 +45,7 @@ type UserFields = Exclude<
 >;
 
 export interface UserModel extends Model<User> {
-  roles(): typeof roles,
+  roles(): (typeof roles)[number][],
   get(findParams?: Partial<UserFields>): Promise<User>;
   list(params?: Partial<UserFields> & { page?: number; perPage?: number }): Promise<User>;
   findAndGenerateToken(options: FindAndGenerateTokenOptions): Promise<{ user: User; accessToken: string }>;

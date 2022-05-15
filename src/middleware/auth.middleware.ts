@@ -12,7 +12,7 @@ const handleJWT = (req, _, next, roles) => async (err, user, info) => {
   const apiError = apiResponse.error({
     message: error ? error.message : 'Unauthorized',
     status: httpStatus.UNAUTHORIZED,
-    stack: error?.stack
+    stack: error?.stack,
   });
 
   try {
@@ -40,6 +40,7 @@ const handleJWT = (req, _, next, roles) => async (err, user, info) => {
 
   return next();
 };
+
 
 export const authorize =
   (roles = UserModel.roles()) =>
