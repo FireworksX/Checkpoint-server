@@ -3,7 +3,8 @@ import { AppResponse } from '@server/interfaces/ApiInterfaces';
 import httpStatus from 'http-status';
 
 export function errorHandler(error: ErrorOptions | any, _req: any, res: AppResponse<never>, next) {
-  let resultError = error
+  console.error(error);
+  let resultError = apiResponse.error({ ...error });
 
   if (error.code === 11000) {
     resultError = apiResponse.error({
@@ -11,9 +12,9 @@ export function errorHandler(error: ErrorOptions | any, _req: any, res: AppRespo
       status: httpStatus.CONFLICT,
       isPublic: true,
       stack: error.stack,
-    })
+    });
   }
 
-  res.status(resultError.status).json(apiResponse.reject(resultError.message, resultError))
-  next()
+  res.status(resultError.status).json(apiResponse.reject(resultError.message, resultError));
+  next();
 }
