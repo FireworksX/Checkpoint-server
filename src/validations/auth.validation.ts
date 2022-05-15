@@ -6,4 +6,5 @@ export default {
   register: [body('phone').custom(phoneValidator), validationMiddleware],
   phoneValidation: [body('phone').custom(phoneValidator), validationMiddleware],
   login: [body('phone').custom(phoneValidator), body('code').exists(), validationMiddleware],
+  refreshToken: [body('phone').custom(phoneValidator), body('refreshToken').exists().isJWT(), validationMiddleware],
 };

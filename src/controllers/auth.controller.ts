@@ -5,6 +5,7 @@ import { TransformUser, UserModel } from '@server/models/user.model';
 import { GenerateTokenResponse, generateTokenResponse } from '@server/utils/generateTokenResponse';
 import { omit } from '@server/utils/omit';
 import { PhoneValidationModel, PhoneValidation } from '@server/models/phoneValidation.model';
+import { RefreshTokenModel } from '@server/models/refreshToken.model';
 
 export default {
   phoneValidation: async (req, res: AppResponse<PhoneValidation>, next) => {
@@ -14,7 +15,7 @@ export default {
       res.status(httpStatus.CREATED);
       return res.json(apiResponse.resolve(validationTicket));
     } catch (e) {
-      return next(e)
+      return next(e);
     }
   },
 
@@ -35,6 +36,24 @@ export default {
     try {
       const options = req.body;
       const { user, accessToken } = await UserModel.findAndGenerateToken(options);
+      const token = await generateTokenResponse(user, accessToken);
+
+      const userTransformed = user.transform();
+      return res.json(apiResponse.resolve({ token, user: userTransformed }));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  refreshToken: async (req, res: AppResponse<{ token: GenerateTokenResponse; user: TransformUser }>, next) => {
+    try {
+      const { phone, refreshToken } = req.body;
+      const refreshObject = await RefreshTokenModel.findOneAndRemove({
+        phone,
+        token: refreshToken,
+      });
+
+      const { user, accessToken } = await UserModel.findAndGenerateToken({ phone, refreshObject });
       const token = await generateTokenResponse(user, accessToken);
 
       const userTransformed = user.transform();

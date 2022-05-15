@@ -10,4 +10,6 @@ router.route('/phoneValidation').post(authValidation.phoneValidation, authContro
 
 router.route('/login').post(authValidation.login, authController.login);
 
+router.route('/refresh-token').post(authValidation.refreshToken, authController.refreshToken);
+
 export default router;

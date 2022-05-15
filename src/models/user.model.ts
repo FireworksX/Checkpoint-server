@@ -13,7 +13,7 @@ const transformFields = ['_id', 'username', 'phone', 'role', 'createdAt'] as con
 
 interface FindAndGenerateTokenOptions {
   phone: string;
-  code: string;
+  code?: string;
   refreshObject?: {
     expires: number;
     phone: string;
@@ -143,6 +143,7 @@ userSchema.statics = {
       isPublic: true,
       message: '',
     };
+
     if (code) {
       if (user && (await user.codeMatches(code))) {
         return { user, accessToken: user.token() };

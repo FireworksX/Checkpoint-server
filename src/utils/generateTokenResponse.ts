@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
 import vars from '@config/vars';
-import { RefreshToken, RefreshTokenGenerateUser } from '@server/models/refreshToken.model';
+import { RefreshTokenModel, RefreshTokenGenerateUser } from '@server/models/refreshToken.model';
 
 export async function generateTokenResponse(user: RefreshTokenGenerateUser, accessToken: string) {
   const tokenType = 'Bearer';
-  const refreshToken = (await RefreshToken.generate(user)).token;
+  const refreshToken = (await RefreshTokenModel.generate(user)).token;
   const expiresIn = dayjs()
     .add(+vars.jwtExpirationInterval, 'minutes')
     .unix();

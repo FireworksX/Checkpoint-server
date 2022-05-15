@@ -7,7 +7,7 @@ interface RefreshToken extends Document {
   token: string;
   userId: User['_id'];
   phone: string;
-  expires: Date;
+  expires: number;
 }
 
 export interface RefreshTokenGenerateUser {
@@ -35,7 +35,7 @@ const refreshTokenSchema = new mongoose.Schema<RefreshToken>({
     ref: 'User',
     required: true,
   },
-  expires: { type: Date },
+  expires: { type: Number },
 });
 
 refreshTokenSchema.statics = {
@@ -44,7 +44,7 @@ refreshTokenSchema.statics = {
     const phone = user.phone;
     const token = `${userId}.${crypto.randomBytes(40).toString('hex')}`;
     const expires = dayjs().add(30, 'days').toDate();
-    const tokenObject = new RefreshToken({
+    const tokenObject = new RefreshTokenModel({
       token,
       userId,
       phone,
@@ -55,6 +55,6 @@ refreshTokenSchema.statics = {
   },
 };
 
-export const RefreshToken = mongoose.model<RefreshToken, RefreshTokenModel>('RefreshToken', refreshTokenSchema);
+export const RefreshTokenModel = mongoose.model<RefreshToken, RefreshTokenModel>('RefreshToken', refreshTokenSchema);
 
-export default RefreshToken;
+export default RefreshTokenModel;
