@@ -20,12 +20,9 @@ interface FindAndGenerateTokenOptions {
   };
 }
 
-export type TransformUser = {
-  [P in keyof Pick<User, typeof transformFields[number]>]: User[P];
-};
+export type TransformUser = Pick<User, (typeof transformFields)[number]>
 
 export interface User extends Document {
-  _id: any;
   phone: string;
   role: typeof roles[number];
   username?: string;
@@ -37,17 +34,10 @@ export interface User extends Document {
   codeMatches(): Promise<boolean>;
 }
 
-type UserFields = Exclude<
-  {
-    [P in keyof User]: User[P] extends () => any ? never : User[P];
-  },
-  never
->;
-
 export interface UserModel extends Model<User> {
   roles(): (typeof roles)[number][],
-  get(findParams?: Partial<UserFields>): Promise<User>;
-  list(params?: Partial<UserFields> & { page?: number; perPage?: number }): Promise<User>;
+  get(findParams?: Partial<TransformUser>): Promise<User>;
+  list(params?: Partial<TransformUser> & { page?: number; perPage?: number }): Promise<User>;
   findAndGenerateToken(options: FindAndGenerateTokenOptions): Promise<{ user: User; accessToken: string }>;
 }
 
@@ -117,7 +107,7 @@ userSchema.method({
 /**
  * Statics
  */
-userSchema.statics = {
+userSchema.static({
   roles: () => roles,
 
   async get(findQuery) {
@@ -210,7 +200,7 @@ userSchema.statics = {
       picture,
     });
   },
-};
+})
 
 export const UserModel = mongoose.model<User, UserModel>('User', userSchema);
 

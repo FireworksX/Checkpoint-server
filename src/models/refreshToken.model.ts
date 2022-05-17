@@ -2,6 +2,7 @@ import mongoose, { Model, Document } from 'mongoose';
 import dayjs from 'dayjs';
 import crypto from 'crypto';
 import { User } from '@server/models/user.model';
+import { MODEL_NAMES } from '@server/constants/constants';
 
 interface RefreshToken extends Document {
   token: string;
@@ -11,7 +12,7 @@ interface RefreshToken extends Document {
 }
 
 export interface RefreshTokenGenerateUser {
-  _id: string;
+  _id?: string;
   phone: string;
 }
 
@@ -27,12 +28,12 @@ const refreshTokenSchema = new mongoose.Schema<RefreshToken>({
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: MODEL_NAMES.User,
     required: true,
   },
   phone: {
     type: String,
-    ref: 'User',
+    ref: MODEL_NAMES.User,
     required: true,
   },
   expires: { type: Number },
@@ -55,6 +56,9 @@ refreshTokenSchema.statics = {
   },
 };
 
-export const RefreshTokenModel = mongoose.model<RefreshToken, RefreshTokenModel>('RefreshToken', refreshTokenSchema);
+export const RefreshTokenModel = mongoose.model<RefreshToken, RefreshTokenModel>(
+  MODEL_NAMES.RefreshToken,
+  refreshTokenSchema,
+);
 
 export default RefreshTokenModel;

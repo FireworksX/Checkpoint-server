@@ -1,19 +1,17 @@
-import mongoose, { Model, Document, Types } from 'mongoose';
+import mongoose, { Model, Document, Types, Schema } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
 import { TransformCategoryField } from '@server/models/categoryField.model';
+import { MODEL_NAMES } from '@server/constants/constants';
 
 const transformFields = ['_id', 'slug', 'name', 'fields', 'createdAt'] as const;
 
-export type TransformCategory = {
-  [P in keyof Pick<Category, typeof transformFields[number]>]: Category[P];
-};
+export type TransformCategory = Pick<Category, typeof transformFields[number]>;
 
 export type PopulateTransformCategory = Omit<TransformCategory, 'fields'> & {
   fields: TransformCategoryField[];
 };
 
 export interface Category extends Document {
-  _id: any;
   slug: string;
   name: string;
   fields: Types.ObjectId[];
@@ -22,20 +20,13 @@ export interface Category extends Document {
   populateTransform(): Promise<PopulateTransformCategory>;
 }
 
-export type CategoryFields = Exclude<
-  {
-    [P in keyof Category]: Category[P] extends () => unknown ? never : Category[P];
-  },
-  never
->;
-
 export interface CategoryModel extends Model<Category> {
-  get(findParams?: Partial<CategoryFields>): Promise<Category>;
-  updateCategory(findParams: Partial<CategoryFields>, newCategory: Partial<CategoryFields>): Promise<Category>;
-  list(params?: Partial<CategoryFields> & { page?: number; perPage?: number }): Promise<Category>;
+  get(findParams?: Partial<TransformCategory>): Promise<Category>;
+  updateCategory(findParams: Partial<TransformCategory>, newCategory: Partial<TransformCategory>): Promise<Category>;
+  list(params?: Partial<TransformCategory> & { page?: number; perPage?: number }): Promise<Category>;
 }
 
-const categorySchema = new mongoose.Schema<Category>(
+const categorySchema = new Schema<Category>(
   {
     slug: {
       type: String,
@@ -48,7 +39,7 @@ const categorySchema = new mongoose.Schema<Category>(
       trim: true,
     },
     fields: {
-      type: [{ type: mongoose.Types.ObjectId, ref: 'CategoryField' }],
+      type: [{ type: mongoose.Types.ObjectId, ref: MODEL_NAMES.CategoryField }],
     },
   },
   {
@@ -82,7 +73,7 @@ categorySchema.method({
 /**
  * Statics
  */
-categorySchema.statics = {
+categorySchema.static({
   async get(findQuery) {
     const user = await this.findOne(findQuery);
     if (user) {
@@ -94,7 +85,7 @@ categorySchema.statics = {
     });
   },
 
-  async updateCategory(findQuery, newCategory: CategoryFields) {
+  async updateCategory(findQuery, newCategory: TransformCategory) {
     const category = await this.findOneAndUpdate(findQuery, newCategory, { upsert: true });
 
     if (category) {
@@ -105,6 +96,6 @@ categorySchema.statics = {
       message: 'Category does not exist',
     });
   },
-};
+});
 
-export const CategoryModel = mongoose.model<Category, CategoryModel>('Category', categorySchema);
+export const CategoryModel = mongoose.model<Category, CategoryModel>(MODEL_NAMES.Category, categorySchema);

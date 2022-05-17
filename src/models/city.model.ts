@@ -2,38 +2,29 @@ import mongoose, { Model, Document, Schema, Types } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
 import { TransformCategoryField } from '@server/models/categoryField.model';
 import { omitBy } from '@server/utils/omitBy';
+import { MODEL_NAMES } from '@server/constants/constants';
 
 const transformFields = ['_id', 'slug', 'name', 'categories', 'createdAt'] as const;
 
-export type TransformCity = {
-  [P in keyof Pick<City, typeof transformFields[number]>]: City[P];
-};
+export type TransformCity = Pick<City, typeof transformFields[number]>;
 
 export type PopulateTransformCity = Omit<TransformCity, 'categories'> & {
-  fields: TransformCategoryField[];
+  categories: TransformCategoryField[];
 };
 
 export interface City extends Document {
-  _id: any;
   slug: string;
   name: string;
   createdAt: Date;
-  categories: Types.ObjectId[];
+  categories: Types.ObjectId;
   transform(): TransformCity;
   populateTransform(): Promise<PopulateTransformCity>;
 }
 
-export type CityFields = Exclude<
-  {
-    [P in keyof City]: City[P] extends () => unknown ? never : City[P];
-  },
-  never
->;
-
 export interface CityModel extends Model<City> {
-  get(findParams?: Partial<CityFields>): Promise<City>;
-  list(params?: Partial<CityFields> & { skip?: number; limit?: number }): Promise<City[]>;
-  updateCity(findParams: Partial<CityFields>, newCategory: Partial<CityFields>): Promise<City>;
+  get(findParams?: Partial<TransformCity>): Promise<City>;
+  list(params?: Partial<TransformCity> & { skip?: number; limit?: number }): Promise<City[]>;
+  updateCity(findParams: Partial<TransformCity>, newCategory: Partial<TransformCity>): Promise<City>;
 }
 
 const citySchema = new Schema<City>(
@@ -51,7 +42,7 @@ const citySchema = new Schema<City>(
     categories: [
       {
         type: mongoose.Types.ObjectId,
-        ref: 'Category',
+        ref: MODEL_NAMES.Category,
       },
     ],
   },
@@ -86,7 +77,7 @@ citySchema.method({
 /**
  * Statics
  */
-citySchema.statics = {
+citySchema.static({
   async get(findQuery) {
     const user = await this.findOne(findQuery);
     if (user) {
@@ -101,14 +92,10 @@ citySchema.statics = {
   list({ skip = 0, limit = 30, ...restParams }) {
     const options = omitBy(restParams, (value) => !!value);
 
-    return this.find(options)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .exec();
+    return this.find(options).sort({ createdAt: -1 }).skip(skip).limit(limit).exec();
   },
 
-  async updateCity(findQuery, newCity: CityFields) {
+  async updateCity(findQuery, newCity: TransformCity) {
     const city = await this.findOneAndUpdate(findQuery, newCity, { upsert: true });
 
     if (city) {
@@ -119,6 +106,6 @@ citySchema.statics = {
       message: 'City does not exist',
     });
   },
-};
+});
 
-export const CityModel = mongoose.model<City, CityModel>('City', citySchema);
+export const CityModel = mongoose.model<City, CityModel>(MODEL_NAMES.City, citySchema);

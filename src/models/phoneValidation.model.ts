@@ -2,6 +2,7 @@ import mongoose, { Model, Document } from 'mongoose';
 import dayjs from 'dayjs';
 import { generateCode } from '@server/utils/generateCode';
 import apiResponse from '@server/utils/apiResponse';
+import { MODEL_NAMES } from '@server/constants/constants';
 
 export interface PhoneValidation extends Document {
   code: string;
@@ -27,7 +28,7 @@ const phoneValidationSchema = new mongoose.Schema<PhoneValidation>({
   expires: { type: Date },
 });
 
-phoneValidationSchema.statics = {
+phoneValidationSchema.static({
   async get(phone: string) {
     const tickets = await this.findOne({ phone });
 
@@ -62,10 +63,10 @@ phoneValidationSchema.statics = {
     this.remove;
     return tokenObject;
   },
-};
+})
 
 export const PhoneValidationModel = mongoose.model<PhoneValidation, PhoneValidationModel>(
-  'PhoneValidation',
+  MODEL_NAMES.PhoneValidation,
   phoneValidationSchema,
 );
 

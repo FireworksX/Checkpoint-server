@@ -1,34 +1,25 @@
-import mongoose, { Model, Document } from 'mongoose';
+import mongoose, { Model, Document, Schema } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
+import { MODEL_NAMES } from '@server/constants/constants';
 
 const transformFields = ['_id', 'slug', 'name', 'createdAt'] as const;
 
-export type TransformCategoryField = {
-  [P in keyof Pick<CategoryField, typeof transformFields[number]>]: CategoryField[P];
-};
+export type TransformCategoryField = Pick<CategoryField, typeof transformFields[number]>;
 
 export interface CategoryField extends Document {
-  _id: any;
   slug: string;
   name: string;
-  value: unknown
+  value: unknown;
   createdAt: Date;
   transform(): TransformCategoryField;
 }
 
-type CategoryFieldFields = Exclude<
-  {
-    [P in keyof CategoryField]: CategoryField[P] extends () => unknown ? never : CategoryField[P];
-  },
-  never
->;
-
 export interface CategoryFieldModel extends Model<CategoryField> {
-  get(findParams?: Partial<CategoryFieldFields>): Promise<CategoryField>;
-  list(params?: Partial<CategoryFieldFields> & { page?: number; perPage?: number }): Promise<CategoryField>;
+  get(findParams?: Partial<TransformCategoryField>): Promise<CategoryField>;
+  list(params?: Partial<TransformCategoryField> & { page?: number; perPage?: number }): Promise<CategoryField>;
 }
 
-const categoryFieldSchema = new mongoose.Schema<CategoryField>(
+const categoryFieldSchema = new Schema<CategoryField>(
   {
     slug: {
       type: String,
@@ -39,7 +30,7 @@ const categoryFieldSchema = new mongoose.Schema<CategoryField>(
       type: String,
       maxlength: 128,
       trim: true,
-    }
+    },
   },
   {
     timestamps: true,
@@ -61,8 +52,8 @@ categoryFieldSchema.method({
 /**
  * Statics
  */
-categoryFieldSchema.statics = {
-  async get(findQuery) {
+categoryFieldSchema.static({
+  async get(findQuery: TransformCategoryField) {
     const user = await this.findOne(findQuery);
     if (user) {
       return user;
@@ -72,9 +63,9 @@ categoryFieldSchema.statics = {
       message: 'CategoryField does not exist',
     });
   },
-};
+});
 
 export const CategoryFieldModel = mongoose.model<CategoryField, CategoryFieldModel>(
-  'CategoryField',
+  MODEL_NAMES.CategoryField,
   categoryFieldSchema,
 );

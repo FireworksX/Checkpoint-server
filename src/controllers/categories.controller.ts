@@ -4,7 +4,6 @@ import apiResponse from '@server/utils/apiResponse';
 import {
   CategoryModel,
   TransformCategory,
-  CategoryFields,
   PopulateTransformCategory,
 } from '@server/models/category.model';
 import { omit } from '@server/utils/omit';
@@ -35,7 +34,7 @@ export default {
   },
 
   update: async (
-    req: AppRequestBody<{ findSlug: string } & Partial<CategoryFields>>,
+    req: AppRequestBody<{ findSlug: string } & Partial<TransformCategory>>,
     res: AppResponse<PopulateTransformCategory>,
     next,
   ) => {

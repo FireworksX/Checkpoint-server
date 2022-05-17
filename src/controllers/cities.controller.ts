@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
 import { AppRequestBody, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
-import { CityFields, CityModel, PopulateTransformCity, TransformCity } from '@server/models/city.model';
+import { CityModel, PopulateTransformCity, TransformCity } from '@server/models/city.model';
 import { omit } from '@server/utils/omit';
 
 export default {
@@ -54,7 +54,7 @@ export default {
   },
 
   update: async (
-    req: AppRequestBody<{ findSlug: string } & Partial<CityFields>>,
+    req: AppRequestBody<{ findSlug: string } & Partial<TransformCity>>,
     res: AppResponse<PopulateTransformCity>,
     next,
   ) => {
