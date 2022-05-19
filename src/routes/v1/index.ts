@@ -6,6 +6,7 @@ import categoriesRoute from './categories.route'
 import categoriesFieldsRoute from './categoriesFields.route'
 import citiesRoute from './cities.route'
 import mediaRoute from './media.route'
+import locationsRoute from './locations.route'
 
 const router = express.Router()
 
@@ -16,5 +17,6 @@ router.use('/categories', categoriesRoute)
 router.use('/categoriesFields', categoriesFieldsRoute)
 router.use('/cities', citiesRoute)
 router.use('/media', mediaRoute)
+router.use('/locations', locationsRoute)
 
 export default router

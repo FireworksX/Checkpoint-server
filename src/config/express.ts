@@ -4,6 +4,15 @@ import apiRouter from '@server/routes/v1';
 import passportStrategies from '@server/config/passport';
 import { errorHandler } from '@server/middleware/errorHandler.middleware';
 
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface User {
+      _id: 10
+    }
+  }
+}
+
 const createServer = (): express.Application => {
   const app = express();
 

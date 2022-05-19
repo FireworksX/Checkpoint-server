@@ -1,4 +1,4 @@
-import mongoose, { Model, Document } from 'mongoose';
+import { model, Model, Document, Schema } from 'mongoose';
 import dayjs from 'dayjs';
 import jwt from 'jwt-simple';
 import vars from '@server/config/vars';
@@ -7,9 +7,11 @@ import httpStatus from 'http-status';
 import { v4 as uuidv4 } from 'uuid';
 import { omitBy } from '@server/utils/omitBy';
 import { PhoneValidationModel } from '@server/models/phoneValidation.model';
+import { MODEL_NAMES } from '@server/constants/constants';
+import { TransformMediaFile } from '@server/models/mediaFile.model';
 
 const roles = ['user', 'admin'] as const;
-const transformFields = ['_id', 'username', 'phone', 'role', 'createdAt'] as const;
+const transformFields = ['_id', 'username', 'avatar', 'phone', 'role', 'createdAt'] as const;
 
 interface FindAndGenerateTokenOptions {
   phone: string;
@@ -20,28 +22,34 @@ interface FindAndGenerateTokenOptions {
   };
 }
 
-export type TransformUser = Pick<User, (typeof transformFields)[number]>
+export type TransformUser = Pick<User, typeof transformFields[number]>;
+
+export type PopulateTransformUser = Omit<TransformUser, 'avatar'> & {
+  avatar: TransformMediaFile;
+};
 
 export interface User extends Document {
   phone: string;
   role: typeof roles[number];
+  avatar?: Schema.Types.ObjectId;
   username?: string;
   firstName?: string;
   lastName?: string;
   createdAt: Date;
   transform(): TransformUser;
+  populateTransform(): Promise<PopulateTransformUser>;
   token(): string;
   codeMatches(): Promise<boolean>;
 }
 
 export interface UserModel extends Model<User> {
-  roles(): (typeof roles)[number][],
+  roles(): typeof roles[number][];
   get(findParams?: Partial<TransformUser>): Promise<User>;
   list(params?: Partial<TransformUser> & { page?: number; perPage?: number }): Promise<User>;
   findAndGenerateToken(options: FindAndGenerateTokenOptions): Promise<{ user: User; accessToken: string }>;
 }
 
-const userSchema = new mongoose.Schema<User>(
+const userSchema = new Schema<User>(
   {
     phone: {
       type: String,
@@ -58,6 +66,10 @@ const userSchema = new mongoose.Schema<User>(
       type: String,
       enum: roles,
       default: 'user',
+    },
+    avatar: {
+      type: Schema.Types.ObjectId,
+      ref: MODEL_NAMES.MediaFile,
     },
     firstName: {
       type: String,
@@ -84,6 +96,12 @@ userSchema.method({
     return transformed;
   },
 
+  async populateTransform() {
+    const selfData = await this.populate('fields');
+
+    return this.transform(selfData);
+  },
+
   token() {
     return jwt.encode(
       {
@@ -98,9 +116,9 @@ userSchema.method({
   },
 
   async codeMatches(code: string) {
-    const findTicket = await PhoneValidationModel.get(this.phone)
+    const findTicket = await PhoneValidationModel.get(this.phone);
 
-    return findTicket?.code === code
+    return findTicket?.code === code;
   },
 });
 
@@ -200,8 +218,8 @@ userSchema.static({
       picture,
     });
   },
-})
+});
 
-export const UserModel = mongoose.model<User, UserModel>('User', userSchema);
+export const UserModel = model<User, UserModel>('User', userSchema);
 
 export default UserModel;
