@@ -8,4 +8,5 @@ export const MODEL_NAMES = createConstants(
   'PhoneValidation',
   'RefreshToken',
   'User',
+  'MediaFile',
 );

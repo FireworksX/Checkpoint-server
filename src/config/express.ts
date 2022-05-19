@@ -9,6 +9,7 @@ const createServer = (): express.Application => {
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
+  app.use(express.static('uploads'));
 
   app.use(passport.initialize());
   passport.use('jwt', passportStrategies.jwt);

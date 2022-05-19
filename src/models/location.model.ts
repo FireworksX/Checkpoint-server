@@ -2,19 +2,26 @@ import mongoose, { Model, Document, Schema } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
 import { PopulateTransformCategory } from '@server/models/category.model';
 import { MODEL_NAMES } from '@server/constants/constants';
+import { TransformUser } from '@server/models/user.model';
+import { PopulateTransformCity } from '@server/models/city.model';
 
-const transformFields = ['_id', 'slug', 'name', 'category', 'createdAt'] as const;
+const transformFields = ['_id', 'slug', 'title', 'category', 'author', 'city', 'createdAt'] as const;
 
-export type TransformLocation = Pick<Location, (typeof transformFields)[number]>
+export type TransformLocation = Pick<Location, typeof transformFields[number]>;
 
-export type PopulateTransformLocation = Omit<TransformLocation, 'fields'> & {
+export type PopulateTransformLocation = Omit<TransformLocation, 'category' | 'author' | 'city'> & {
   category: PopulateTransformCategory[];
+  author: TransformUser
+  city: PopulateTransformCity
 };
 
 export interface Location extends Document {
   slug: string;
-  name: string;
+  title: string;
+  description: string;
   category: Schema.Types.ObjectId;
+  author: Schema.Types.ObjectId;
+  city: Schema.Types.ObjectId;
   createdAt: Date;
   transform(): TransformLocation;
   populateTransform(): Promise<PopulateTransformLocation>;
@@ -32,12 +39,13 @@ const locationSchema = new Schema<Location, Model<Location>>(
       type: String,
       trim: true,
     },
-    name: {
+    title: {
       type: String,
-      maxlength: 128,
       trim: true,
     },
-    category: { type: Schema.Types.ObjectId, ref: 'Person' },
+    category: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.Category },
+    author: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.User },
+    city: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.City },
   },
   {
     timestamps: true,
@@ -57,7 +65,7 @@ locationSchema.method({
 
   async populateTransform() {
     const transformed = {};
-    const selfData = await this.populate('category');
+    const selfData = await this.populate('category').populate('author').populate('city');
 
     transformFields.forEach((field) => {
       transformed[field] = selfData[field];
@@ -93,6 +101,6 @@ locationSchema.static({
       message: 'Location does not exist',
     });
   },
-})
+});
 
 export const LocationModel = mongoose.model<Location, LocationModel>(MODEL_NAMES.Location, locationSchema);
