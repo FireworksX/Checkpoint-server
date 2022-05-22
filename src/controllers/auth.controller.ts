@@ -4,15 +4,28 @@ import apiResponse from '@server/utils/apiResponse';
 import { TransformUser, UserModel } from '@server/models/user.model';
 import { GenerateTokenResponse, generateTokenResponse } from '@server/utils/generateTokenResponse';
 import { omit } from '@server/utils/omit';
-import { PhoneValidationModel, PhoneValidation } from '@server/models/phoneValidation.model';
+import { PhoneValidationModel, CreatedTicket } from '@server/models/phoneValidation.model';
 import { RefreshTokenModel } from '@server/models/refreshToken.model';
 
 export default {
-  phoneValidation: async (req, res: AppResponse<PhoneValidation>, next) => {
+  phoneValidationCreate: async (req, res: AppResponse<CreatedTicket>, next) => {
     try {
       const { phone } = req.body;
       const validationTicket = await PhoneValidationModel.generate(phone);
+
       res.status(httpStatus.CREATED);
+      return res.json(apiResponse.resolve(validationTicket));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  phoneValidationCheck: async (req, res: AppResponse<boolean>, next) => {
+    try {
+      const { phone, code } = req.body;
+      const validationTicket = await PhoneValidationModel.has({ phone, code });
+
+      res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(validationTicket));
     } catch (e) {
       return next(e);

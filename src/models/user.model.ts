@@ -45,6 +45,7 @@ export interface User extends Document {
 export interface UserModel extends Model<User> {
   roles(): typeof roles[number][];
   get(findParams?: Partial<TransformUser>): Promise<User>;
+  has(findParams?: Partial<TransformUser>): Promise<boolean>;
   list(params?: Partial<TransformUser> & { page?: number; perPage?: number }): Promise<User>;
   findAndGenerateToken(options: FindAndGenerateTokenOptions): Promise<{ user: User; accessToken: string }>;
 }
@@ -116,9 +117,10 @@ userSchema.method({
   },
 
   async codeMatches(code: string) {
-    const findTicket = await PhoneValidationModel.get(this.phone);
-
-    return findTicket?.code === code;
+    return await PhoneValidationModel.has({
+      phone: this.phone,
+      code,
+    });
   },
 });
 
@@ -137,6 +139,12 @@ userSchema.static({
     throw apiResponse.error({
       message: 'User does not exist',
     });
+  },
+
+  async has(findQuery) {
+    const user = await this.findOne(findQuery);
+
+    return !!user
   },
 
   async findAndGenerateToken(options: FindAndGenerateTokenOptions) {

@@ -6,6 +6,7 @@ import { authorize } from '@server/middleware/auth.middleware';
 const router = express.Router();
 
 router.route('/detail/:username').get(authorize(), usersValidation.getUser, usersController.getUser);
+router.route('/check').get(usersController.hasRegisterUser);
 
 router.route('/profile').get(authorize(), usersController.loggedIn);
 
