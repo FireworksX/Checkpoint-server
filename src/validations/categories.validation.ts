@@ -3,6 +3,7 @@ import { validationMiddleware } from '@server/utils/validationMiddleware';
 
 export default {
   getDetail: [param('slug').exists().isString(), validationMiddleware],
-  create: [body('name').isString(), body('slug').isString(), body('fields').isArray(), validationMiddleware],
+  getList: [param('author'), validationMiddleware],
+  create: [body('name').isString(), validationMiddleware],
   update: [body('findSlug').isString(), validationMiddleware],
 };

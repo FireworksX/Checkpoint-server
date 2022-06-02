@@ -29,8 +29,18 @@ export default {
 
   loggedIn: async (req, res: AppResponse<TransformUser>, next) => {
     try {
+      const userModel = req.user;
+      const userCategoriesPromise = req.user.getCategories();
+
+      const [userCategories] = await Promise.all([userCategoriesPromise]);
+
       res.status(httpStatus.OK);
-      return res.json(apiResponse.resolve(req.user.transform()));
+      return res.json(
+        apiResponse.resolve({
+          ...userModel.transform(),
+          categories: userCategories,
+        }),
+      );
     } catch (e) {
       return next(e);
     }

@@ -1,15 +1,15 @@
 import mongoose, { Model, Document, Schema, Types } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
-import { TransformCategoryField } from '@server/models/categoryField.model';
 import { omitBy } from '@server/utils/omitBy';
 import { MODEL_NAMES } from '@server/constants/constants';
+import { TransformCategory } from '@server/models/category.model';
 
 const transformFields = ['_id', 'slug', 'name', 'categories', 'createdAt'] as const;
 
 export type TransformCity = Pick<City, typeof transformFields[number]>;
 
 export type PopulateTransformCity = Omit<TransformCity, 'categories'> & {
-  categories: TransformCategoryField[];
+  categories: TransformCategory[];
 };
 
 export interface City extends Document {

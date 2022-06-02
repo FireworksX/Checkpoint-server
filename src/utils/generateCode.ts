@@ -1,3 +1,3 @@
 export function generateCode() {
-  return Math.floor(Math.random() * 10000);
+  return 1111//Math.floor(Math.random() * 10000);
 }

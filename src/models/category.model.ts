@@ -1,29 +1,35 @@
-import mongoose, { Model, Document, Types, Schema } from 'mongoose';
+import mongoose, { Model, Document, Schema } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
-import { TransformCategoryField } from '@server/models/categoryField.model';
 import { MODEL_NAMES } from '@server/constants/constants';
+import { TransformUser } from '@server/models/user.model';
+import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
+import { omitBy } from '@server/utils/omitBy';
+import { Pagination } from '@server/interfaces/helpers';
 
-const transformFields = ['_id', 'slug', 'name', 'fields', 'createdAt'] as const;
+const transformFields = ['_id', 'slug', 'name', 'author', 'icon', 'description', 'createdAt'] as const;
+const populateFields = ['author'];
 
 export type TransformCategory = Pick<Category, typeof transformFields[number]>;
 
-export type PopulateTransformCategory = Omit<TransformCategory, 'fields'> & {
-  fields: TransformCategoryField[];
+export type PopulateTransformCategory = Omit<TransformCategory, | 'author'> & {
+  author: TransformUser;
 };
 
 export interface Category extends Document {
   slug: string;
   name: string;
-  fields: Types.ObjectId[];
+  description?: string;
+  author: Schema.Types.ObjectId;
+  icon?: string
   createdAt: Date;
   transform(): TransformCategory;
   populateTransform(): Promise<PopulateTransformCategory>;
 }
 
-export interface CategoryModel extends Model<Category> {
+export interface CategoryModel extends Model<Category>, GenerateSlugBySchema {
   get(findParams?: Partial<TransformCategory>): Promise<Category>;
   updateCategory(findParams: Partial<TransformCategory>, newCategory: Partial<TransformCategory>): Promise<Category>;
-  list(params?: Partial<TransformCategory> & { page?: number; perPage?: number }): Promise<Category>;
+  list(params?: Partial<TransformCategory> & Pagination): Promise<Category[]>;
 }
 
 const categorySchema = new Schema<Category>(
@@ -32,14 +38,25 @@ const categorySchema = new Schema<Category>(
       type: String,
       trim: true,
       unique: true,
+      required: true,
     },
     name: {
       type: String,
       maxlength: 128,
       trim: true,
+      required: true,
     },
-    fields: {
-      type: [{ type: mongoose.Types.ObjectId, ref: MODEL_NAMES.CategoryField }],
+    description: {
+      type: String,
+      trim: true,
+    },
+    author: {
+      type: Schema.Types.ObjectId,
+      ref: MODEL_NAMES.User,
+      required: true,
+    },
+    icon: {
+      type: String, // TODO Add enum with all icons
     },
   },
   {
@@ -59,14 +76,9 @@ categorySchema.method({
   },
 
   async populateTransform() {
-    const transformed = {};
-    const selfData = await this.populate('fields');
+    const filedPromises = await Promise.all(populateFields.map((field) => this.populate(field)));
 
-    transformFields.forEach((field) => {
-      transformed[field] = selfData[field];
-    });
-
-    return transformed;
+    return this.transform(filedPromises);
   },
 });
 
@@ -75,14 +87,24 @@ categorySchema.method({
  */
 categorySchema.static({
   async get(findQuery) {
-    const user = await this.findOne(findQuery);
-    if (user) {
-      return user;
+    const category = await this.findOne(findQuery);
+    if (category) {
+      return category;
     }
 
     throw apiResponse.error({
       message: 'Category does not exist',
     });
+  },
+
+  list({ page = 1, perPage = 30, ...restParams }) {
+    const options = omitBy(restParams, (value) => !!value);
+
+    return this.find(options)
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
   },
 
   async updateCategory(findQuery, newCategory: TransformCategory) {
@@ -97,5 +119,7 @@ categorySchema.static({
     });
   },
 });
+
+generateSlugBySchema(categorySchema);
 
 export const CategoryModel = mongoose.model<Category, CategoryModel>(MODEL_NAMES.Category, categorySchema);

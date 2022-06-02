@@ -8,6 +8,7 @@ import { TransformMediaFile } from '@server/models/mediaFile.model';
 import { Pagination } from '@server/interfaces/helpers';
 import httpStatus from 'http-status';
 import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
+import { omitBy } from '@server/utils/omitBy';
 
 const transformFields = ['_id', 'slug', 'title', 'category', 'author', 'city', 'coords', 'createdAt'] as const;
 const populateFields = ['category', 'author', 'city', 'gallery']
@@ -104,6 +105,16 @@ locationSchema.static({
       message: 'Location does not exist',
       status: httpStatus.NOT_FOUND,
     });
+  },
+
+  list({ page = 1, perPage = 30, ...restParams }) {
+    const options = omitBy(restParams, (value) => !!value);
+
+    return this.find(options)
+      .sort({ createdAt: -1 })
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
   },
 
   async updateLocation(findQuery, newLocation: TransformLocation) {

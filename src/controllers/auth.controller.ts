@@ -22,8 +22,7 @@ export default {
 
   phoneValidationCheck: async (req, res: AppResponse<boolean>, next) => {
     try {
-      const { phone, code } = req.body;
-      const validationTicket = await PhoneValidationModel.has({ phone, code });
+      const validationTicket = await PhoneValidationModel.has(req.query);
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(validationTicket));
@@ -38,6 +37,7 @@ export default {
       const user = await new UserModel(userData).save();
       const userTransformed = user.transform();
       const token = await generateTokenResponse(user, user.token());
+
       res.status(httpStatus.CREATED);
       return res.json(apiResponse.resolve({ token, user: userTransformed }));
     } catch (e) {

@@ -1,4 +1,4 @@
-import { model, Model, Document, Schema } from 'mongoose';
+import { model, Model, Document, Schema, Types } from 'mongoose';
 import dayjs from 'dayjs';
 import jwt from 'jwt-simple';
 import vars from '@server/config/vars';
@@ -9,9 +9,24 @@ import { omitBy } from '@server/utils/omitBy';
 import { PhoneValidationModel } from '@server/models/phoneValidation.model';
 import { MODEL_NAMES } from '@server/constants/constants';
 import { TransformMediaFile } from '@server/models/mediaFile.model';
+import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySchema';
+import { CategoryModel, TransformCategory } from '@server/models/category.model';
+import { LocationModel, PopulateTransformLocation } from '@server/models/location.model';
 
 const roles = ['user', 'admin'] as const;
-const transformFields = ['_id', 'username', 'avatar', 'phone', 'role', 'createdAt'] as const;
+const transformFields = [
+  '_id',
+  'username',
+  'avatar',
+  'firstName',
+  'lastName',
+  'bio',
+  'phone',
+  'role',
+  'followers',
+  'subscribers',
+  'createdAt',
+] as const;
 
 interface FindAndGenerateTokenOptions {
   phone: string;
@@ -28,18 +43,22 @@ export type PopulateTransformUser = Omit<TransformUser, 'avatar'> & {
   avatar: TransformMediaFile;
 };
 
-export interface User extends Document {
+export interface User extends Document, PopulateBySchema {
   phone: string;
   role: typeof roles[number];
   avatar?: Schema.Types.ObjectId;
   username?: string;
   firstName?: string;
   lastName?: string;
+  bio?: string;
+  followers: Types.ObjectId[];
+  subscribers: Types.ObjectId[];
   createdAt: Date;
   transform(): TransformUser;
-  populateTransform(): Promise<PopulateTransformUser>;
   token(): string;
   codeMatches(): Promise<boolean>;
+  getCategories(): Promise<TransformCategory[]>;
+  getLocations(): Promise<PopulateTransformLocation[]>;
 }
 
 export interface UserModel extends Model<User> {
@@ -54,11 +73,13 @@ const userSchema = new Schema<User>(
   {
     phone: {
       type: String,
+      required: true,
       trim: true,
       unique: true,
     },
     username: {
       type: String,
+      required: true,
       maxlength: 128,
       unique: true,
       trim: true,
@@ -80,6 +101,22 @@ const userSchema = new Schema<User>(
       type: String,
       trim: true,
     },
+    bio: {
+      type: String,
+      trim: true,
+    },
+    followers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: MODEL_NAMES.User,
+      },
+    ],
+    subscribers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: MODEL_NAMES.User,
+      },
+    ],
   },
   {
     timestamps: true,
@@ -95,12 +132,6 @@ userSchema.method({
     });
 
     return transformed;
-  },
-
-  async populateTransform() {
-    const selfData = await this.populate('fields');
-
-    return this.transform(selfData);
   },
 
   token() {
@@ -121,6 +152,28 @@ userSchema.method({
       phone: this.phone,
       code,
     });
+  },
+
+  async getCategories() {
+    const categoriesList = (
+      await CategoryModel.list({
+        author: this._id,
+      })
+    ).map((category) => category.transform());
+
+    return categoriesList;
+  },
+
+  async getLocations() {
+    const promises = (
+      await LocationModel.list({
+        author: this._id,
+      })
+    ).map((location) => location.populateTransform());
+
+    const locationsList = Promise.all(promises);
+
+    return locationsList;
   },
 });
 
@@ -144,7 +197,7 @@ userSchema.static({
   async has(findQuery) {
     const user = await this.findOne(findQuery);
 
-    return !!user
+    return !!user;
   },
 
   async findAndGenerateToken(options: FindAndGenerateTokenOptions) {
@@ -227,6 +280,8 @@ userSchema.static({
     });
   },
 });
+
+populateBySchema(userSchema);
 
 export const UserModel = model<User, UserModel>('User', userSchema);
 

@@ -5,9 +5,10 @@ import { authorize } from '@server/middleware/auth.middleware';
 
 const router = express.Router();
 
-router.route('/:slug').get(categoriesValidation.getDetail, categoriesController.getDetail);
+router.route('/detail/:slug').get(categoriesValidation.getDetail, categoriesController.getDetail);
+router.route('/list').get(categoriesValidation.getList, categoriesController.getList);
 
-router.route('/create').post(authorize(['admin']), categoriesValidation.create, categoriesController.create);
-router.route('/update').post(authorize(['admin']), categoriesValidation.update, categoriesController.update);
+router.route('/create').post(authorize(), categoriesValidation.create, categoriesController.create);
+router.route('/update').post(authorize(), categoriesValidation.update, categoriesController.update);
 
 export default router;

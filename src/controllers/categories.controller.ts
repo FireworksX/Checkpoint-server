@@ -1,12 +1,10 @@
 import httpStatus from 'http-status';
 import { AppRequestBody, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
-import {
-  CategoryModel,
-  TransformCategory,
-  PopulateTransformCategory,
-} from '@server/models/category.model';
+import { CategoryModel, TransformCategory, PopulateTransformCategory } from '@server/models/category.model';
 import { omit } from '@server/utils/omit';
+
+type CreateCategoryBody = Omit<TransformCategory, 'slug' | '_id' | 'author'>;
 
 export default {
   getDetail: async (req, res: AppResponse<TransformCategory>, next) => {
@@ -21,10 +19,29 @@ export default {
     }
   },
 
-  create: async (req, res: AppResponse<PopulateTransformCategory>, next) => {
+  getList: async (req, res: AppResponse<TransformCategory[]>, next) => {
     try {
+      const params = req.params;
+      const findCategories = await CategoryModel.list(params);
+
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(findCategories));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  create: async (req: AppRequestBody<CreateCategoryBody>, res: AppResponse<PopulateTransformCategory>, next) => {
+    try {
+      const { _id } = req.user;
       const options = req.body;
-      const newCategory = await (await new CategoryModel(options).save()).populateTransform();
+      const newCategory = await (
+        await new CategoryModel({
+          ...options,
+          author: _id,
+          slug: await CategoryModel.generateSlug(options.name),
+        }).save()
+      ).populateTransform();
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(newCategory));
