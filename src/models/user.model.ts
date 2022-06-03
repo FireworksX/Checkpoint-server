@@ -1,4 +1,4 @@
-import { model, Model, Document, Schema, Types } from 'mongoose';
+import { model, Model, Document, Schema } from 'mongoose';
 import dayjs from 'dayjs';
 import jwt from 'jwt-simple';
 import vars from '@server/config/vars';
@@ -12,6 +12,7 @@ import { TransformMediaFile } from '@server/models/mediaFile.model';
 import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySchema';
 import { CategoryModel, TransformCategory } from '@server/models/category.model';
 import { LocationModel, PopulateTransformLocation } from '@server/models/location.model';
+import { FollowersPivotModel } from '@server/models/followersPivot.model';
 
 const roles = ['user', 'admin'] as const;
 const transformFields = [
@@ -23,8 +24,6 @@ const transformFields = [
   'bio',
   'phone',
   'role',
-  'followers',
-  'subscribers',
   'createdAt',
 ] as const;
 
@@ -41,13 +40,18 @@ interface FindAndGenerateTokenOptions {
 
 interface PopulateOptions {
   withCategories?: boolean;
+  withFollowers?: boolean;
+  withSubscribers?: boolean;
+  withLocations?: boolean;
 }
 
 export type TransformUser = Pick<User, typeof transformFields[number]>;
 
 export type PopulateTransformUser = Omit<TransformUser, 'avatar'> & {
   avatar: TransformMediaFile;
-  categories?: TransformCategory[]
+  categories?: TransformCategory[];
+  followers?: PopulateTransformUser[];
+  subscribers?: PopulateTransformUser[];
 };
 
 export interface User extends Document, PopulateBySchema {
@@ -58,8 +62,6 @@ export interface User extends Document, PopulateBySchema {
   firstName?: string;
   lastName?: string;
   bio?: string;
-  followers: Types.ObjectId[];
-  subscribers: Types.ObjectId[];
   createdAt: Date;
   transform(): TransformUser;
   populateTransform(options: PopulateOptions): Promise<PopulateTransformUser>;
@@ -113,18 +115,6 @@ const userSchema = new Schema<User>(
       type: String,
       trim: true,
     },
-    followers: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: MODEL_NAMES.User,
-      },
-    ],
-    subscribers: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: MODEL_NAMES.User,
-      },
-    ],
   },
   {
     timestamps: true,
@@ -143,17 +133,23 @@ userSchema.method({
   },
 
   async populateTransform(options: PopulateOptions = {}) {
-    const { withCategories } = options;
+    const { withCategories, withFollowers, withSubscribers, withLocations } = options;
 
-    const [populateUser, userCategories] = await Promise.all([
+    const [populateUser, userCategories, followers, subscribers, locations] = await Promise.all([
       this.populateFields(populateFields),
       withCategories ? this.getCategories() : Promise.resolve([]),
+      withFollowers ? this.getFollowers() : Promise.resolve([]),
+      withSubscribers ? this.getSubscribers() : Promise.resolve([]),
+      withLocations ? this.getLocations() : Promise.resolve([]),
     ]);
 
     return {
       ...populateUser,
-      categories: userCategories
-    }
+      categories: userCategories,
+      followers,
+      subscribers,
+      locations,
+    };
   },
 
   token() {
@@ -196,6 +192,22 @@ userSchema.method({
     const locationsList = Promise.all(promises);
 
     return locationsList;
+  },
+
+  async getFollowers() {
+    const followerPromises = (await FollowersPivotModel.getFollowers({ targetId: this._id })).map((pivot) =>
+      pivot.populateTransform(),
+    );
+
+    return await Promise.all(followerPromises);
+  },
+
+  async getSubscribers() {
+    const followerPromises = (await FollowersPivotModel.getSubscribers({ targetId: this._id })).map((pivot) =>
+      pivot.populateTransform(),
+    );
+
+    return await Promise.all(followerPromises);
   },
 });
 

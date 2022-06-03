@@ -1,6 +1,6 @@
 import mongoose, { Model, Document, Schema, Types } from 'mongoose';
 import { MODEL_NAMES } from '@server/constants/constants';
-import UserModel, { PopulateTransformUser } from '@server/models/user.model';
+import { PopulateTransformUser } from '@server/models/user.model';
 import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySchema';
 import { GenerateSlugBySchema } from '@server/utils/generateSlugBySchema';
 import { Pagination } from '@server/interfaces/helpers';
@@ -26,8 +26,8 @@ export interface FollowersPivot extends Document, PopulateBySchema {
 }
 
 export interface FollowersPivotModel extends Model<FollowersPivot>, GenerateSlugBySchema {
-  getFollowers(options: GetOptions): Promise<PopulateTransformFollowersPivot[]>;
-  getSubscribers(options: GetOptions): Promise<PopulateTransformFollowersPivot[]>;
+  getFollowers(options: GetOptions): Promise<FollowersPivot[]>;
+  getSubscribers(options: GetOptions): Promise<FollowersPivot[]>;
 }
 
 const followersPivotSchema = new Schema<FollowersPivot>(
@@ -57,16 +57,8 @@ followersPivotSchema.method({
     return transformed;
   },
 
-  async populateTransform() {
-    const populatedFollowersPivotPromise = this.populateFields(populateFields);
-    const findOwnerPromise = UserModel.get({ _id: this.owner });
-
-    const [populatedFollowersPivot, findOwner] = await Promise.all([populatedFollowersPivotPromise, findOwnerPromise]);
-
-    return {
-      ...populatedFollowersPivot,
-      owner: await findOwner.populateTransform({ withCategories: true }),
-    };
+  populateTransform() {
+    return this.populateFields(populateFields);
   },
 });
 

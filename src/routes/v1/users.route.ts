@@ -9,5 +9,6 @@ router.route('/detail/:username').get(authorize(), usersValidation.getUser, user
 router.route('/check').get(usersController.hasRegisterUser);
 
 router.route('/profile').get(authorize(), usersController.loggedIn);
+router.route('/profile/subscribe').post(authorize(), usersValidation.subscribe, usersController.subscribe);
 
 export default router;

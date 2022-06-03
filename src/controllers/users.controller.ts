@@ -1,7 +1,8 @@
 import httpStatus from 'http-status';
 import { AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
-import { TransformUser, UserModel } from '@server/models/user.model';
+import { PopulateTransformUser, TransformUser, UserModel } from '@server/models/user.model';
+import { FollowersPivotModel } from '@server/models/followersPivot.model';
 
 export default {
   getUser: async (req, res: AppResponse<TransformUser>, next) => {
@@ -27,20 +28,41 @@ export default {
     }
   },
 
-  loggedIn: async (req, res: AppResponse<TransformUser>, next) => {
+  loggedIn: async (req, res: AppResponse<PopulateTransformUser>, next) => {
     try {
-      const userModel = req.user;
-      const userCategoriesPromise = req.user.getCategories();
-
-      const [userCategories] = await Promise.all([userCategoriesPromise]);
+      const fullUser = await req.user.populateTransform({
+        withCategories: true,
+        withFollowers: true,
+        withSubscribers: true,
+      });
 
       res.status(httpStatus.OK);
-      return res.json(
-        apiResponse.resolve({
-          ...userModel.transform(),
-          categories: userCategories,
-        }),
-      );
+      return res.json(apiResponse.resolve(fullUser));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  subscribe: async (req, res: AppResponse<any>, next) => {
+    try {
+      const userId = req.user._id.toString();
+      const { target } = req.body;
+
+      if (userId === target) {
+        throw apiResponse.error({
+          status: httpStatus.BAD_REQUEST,
+          message: 'You cant to follow yourself'
+        })
+      }
+
+      let resultTarget = await FollowersPivotModel.findOne({ target, follower: userId })
+
+      if (!resultTarget) {
+        resultTarget = await new FollowersPivotModel({ target, follower: userId }).save()
+      }
+
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(resultTarget));
     } catch (e) {
       return next(e);
     }
