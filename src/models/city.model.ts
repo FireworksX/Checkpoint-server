@@ -2,26 +2,34 @@ import mongoose, { Model, Document, Schema, Types } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
 import { omitBy } from '@server/utils/omitBy';
 import { MODEL_NAMES } from '@server/constants/constants';
-import { TransformCategory } from '@server/models/category.model';
+import { PopulateTransformUser } from '@server/models/user.model';
+import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySchema';
+import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
+import { TransformCityRate } from '@server/models/cityRate.model';
 
-const transformFields = ['_id', 'slug', 'name', 'categories', 'createdAt'] as const;
+const transformFields = ['_id', 'slug', 'name', 'owner', 'gallery', 'facts', 'rates', 'createdAt'] as const;
+const populateFields = ['owner', 'gallery', 'rates'];
 
 export type TransformCity = Pick<City, typeof transformFields[number]>;
 
 export type PopulateTransformCity = Omit<TransformCity, 'categories'> & {
-  categories: TransformCategory[];
+  owner: PopulateTransformUser;
+  rates: TransformCityRate[];
 };
 
-export interface City extends Document {
+export interface City extends Document, PopulateBySchema {
   slug: string;
   name: string;
+  owner: Types.ObjectId;
+  gallery: Types.ObjectId[];
+  facts: { name: string; value: string }[];
+  rates: Types.ObjectId[];
   createdAt: Date;
-  categories: Types.ObjectId;
   transform(): TransformCity;
   populateTransform(): Promise<PopulateTransformCity>;
 }
 
-export interface CityModel extends Model<City> {
+export interface CityModel extends Model<City>, GenerateSlugBySchema {
   get(findParams?: Partial<TransformCity>): Promise<City>;
   list(params?: Partial<TransformCity> & { skip?: number; limit?: number }): Promise<City[]>;
   updateCity(findParams: Partial<TransformCity>, newCategory: Partial<TransformCity>): Promise<City>;
@@ -39,12 +47,19 @@ const citySchema = new Schema<City>(
       maxlength: 128,
       trim: true,
     },
-    categories: [
+    gallery: [
       {
-        type: mongoose.Types.ObjectId,
-        ref: MODEL_NAMES.Category,
+        type: Schema.Types.ObjectId,
+        ref: MODEL_NAMES.MediaFile,
       },
     ],
+    owner: {
+      required: true,
+      type: Schema.Types.ObjectId,
+      ref: MODEL_NAMES.User,
+    },
+    facts: [{ name: { type: String }, value: { type: String } }],
+    rates: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.CityRate }],
   },
   {
     timestamps: true,
@@ -62,15 +77,8 @@ citySchema.method({
     return transformed;
   },
 
-  async populateTransform() {
-    const transformed = {};
-    const selfData = await this.populate('categories');
-
-    transformFields.forEach((field) => {
-      transformed[field] = selfData[field];
-    });
-
-    return transformed;
+  populateTransform() {
+    return this.populateFields(populateFields);
   },
 });
 
@@ -79,9 +87,10 @@ citySchema.method({
  */
 citySchema.static({
   async get(findQuery) {
-    const user = await this.findOne(findQuery);
-    if (user) {
-      return user;
+    const city = await this.findOne(findQuery);
+
+    if (city) {
+      return city;
     }
 
     throw apiResponse.error({
@@ -107,5 +116,8 @@ citySchema.static({
     });
   },
 });
+
+populateBySchema(citySchema);
+generateSlugBySchema(citySchema);
 
 export const CityModel = mongoose.model<City, CityModel>(MODEL_NAMES.City, citySchema);

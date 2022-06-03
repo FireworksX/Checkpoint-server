@@ -22,8 +22,8 @@ export default {
 
   getList: async (req, res: AppResponse<TransformLocation[]>, next) => {
     try {
-      const { skip, limit } = req.params;
-      const listOfCity = (await LocationModel.list({ skip, limit })).map((city) => city.transform());
+      const params = req.query;
+      const listOfCity = (await LocationModel.list(params)).map((location) => location.transform());
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(listOfCity));

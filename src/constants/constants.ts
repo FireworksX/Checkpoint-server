@@ -9,4 +9,5 @@ export const MODEL_NAMES = createConstants(
   'RefreshToken',
   'User',
   'MediaFile',
+  'CityRate',
 );

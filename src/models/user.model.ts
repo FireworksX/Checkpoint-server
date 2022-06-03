@@ -28,6 +28,8 @@ const transformFields = [
   'createdAt',
 ] as const;
 
+const populateFields = ['avatar'];
+
 interface FindAndGenerateTokenOptions {
   phone: string;
   code?: string;
@@ -55,6 +57,7 @@ export interface User extends Document, PopulateBySchema {
   subscribers: Types.ObjectId[];
   createdAt: Date;
   transform(): TransformUser;
+  populateTransform(): Promise<PopulateTransformUser>;
   token(): string;
   codeMatches(): Promise<boolean>;
   getCategories(): Promise<TransformCategory[]>;
@@ -132,6 +135,10 @@ userSchema.method({
     });
 
     return transformed;
+  },
+
+  populateTransform() {
+    return this.populateFields(populateFields);
   },
 
   token() {
