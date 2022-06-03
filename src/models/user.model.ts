@@ -39,10 +39,15 @@ interface FindAndGenerateTokenOptions {
   };
 }
 
+interface PopulateOptions {
+  withCategories?: boolean;
+}
+
 export type TransformUser = Pick<User, typeof transformFields[number]>;
 
 export type PopulateTransformUser = Omit<TransformUser, 'avatar'> & {
   avatar: TransformMediaFile;
+  categories?: TransformCategory[]
 };
 
 export interface User extends Document, PopulateBySchema {
@@ -57,7 +62,7 @@ export interface User extends Document, PopulateBySchema {
   subscribers: Types.ObjectId[];
   createdAt: Date;
   transform(): TransformUser;
-  populateTransform(): Promise<PopulateTransformUser>;
+  populateTransform(options: PopulateOptions): Promise<PopulateTransformUser>;
   token(): string;
   codeMatches(): Promise<boolean>;
   getCategories(): Promise<TransformCategory[]>;
@@ -137,8 +142,18 @@ userSchema.method({
     return transformed;
   },
 
-  populateTransform() {
-    return this.populateFields(populateFields);
+  async populateTransform(options: PopulateOptions = {}) {
+    const { withCategories } = options;
+
+    const [populateUser, userCategories] = await Promise.all([
+      this.populateFields(populateFields),
+      withCategories ? this.getCategories() : Promise.resolve([]),
+    ]);
+
+    return {
+      ...populateUser,
+      categories: userCategories
+    }
   },
 
   token() {

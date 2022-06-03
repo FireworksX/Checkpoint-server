@@ -2,7 +2,7 @@ import mongoose, { Model, Document, Schema, Types } from 'mongoose';
 import apiResponse from '@server/utils/apiResponse';
 import { omitBy } from '@server/utils/omitBy';
 import { MODEL_NAMES } from '@server/constants/constants';
-import { PopulateTransformUser } from '@server/models/user.model';
+import UserModel, { PopulateTransformUser } from '@server/models/user.model';
 import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySchema';
 import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
 import { TransformCityRate } from '@server/models/cityRate.model';
@@ -77,8 +77,16 @@ citySchema.method({
     return transformed;
   },
 
-  populateTransform() {
-    return this.populateFields(populateFields);
+  async populateTransform() {
+    const populatedCityPromise = this.populateFields(populateFields);
+    const findOwnerPromise = UserModel.get({ _id: this.owner });
+
+    const [populatedCity, findOwner] = await Promise.all([populatedCityPromise, findOwnerPromise]);
+
+    return {
+      ...populatedCity,
+      owner: await findOwner.populateTransform({ withCategories: true }),
+    };
   },
 });
 

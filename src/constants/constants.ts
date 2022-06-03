@@ -10,4 +10,5 @@ export const MODEL_NAMES = createConstants(
   'User',
   'MediaFile',
   'CityRate',
+  'FollowersPivot'
 );

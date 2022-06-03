@@ -1,6 +1,7 @@
 const mimeTypes = {
   'image/png': 'images',
   'image/jpg': 'images',
+  'image/jpeg': 'images',
   default: 'data',
 };
 

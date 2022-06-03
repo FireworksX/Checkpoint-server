@@ -5,7 +5,7 @@ import { MODEL_NAMES } from '@server/constants/constants';
 import { PopulateBySchema } from '@server/utils/populateBySchema';
 import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
 
-const transformFields = ['_id', 'slug', 'name', 'value', 'createdAt'] as const;
+const transformFields = ['_id', 'slug', 'name', 'value', 'description', 'createdAt'] as const;
 
 export type TransformCityRate = Pick<CityRate, typeof transformFields[number]>;
 
@@ -13,6 +13,7 @@ export interface CityRate extends Document, PopulateBySchema {
   slug: string;
   name: string;
   value: number
+  description: string
   createdAt: Date;
   transform(): TransformCityRate;
 }
@@ -31,6 +32,10 @@ const cityRateSchema = new Schema<CityRate>(
       unique: true,
     },
     name: {
+      type: String,
+      trim: true,
+    },
+    description: {
       type: String,
       trim: true,
     },
