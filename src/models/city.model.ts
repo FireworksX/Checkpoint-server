@@ -85,7 +85,7 @@ citySchema.method({
 
     return {
       ...populatedCity,
-      owner: await findOwner.populateTransform({ withCategories: true }),
+      owner: await findOwner.populateTransform({ withCategories: true, withSubscribers: true }),
     };
   },
 });

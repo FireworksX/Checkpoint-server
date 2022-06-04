@@ -1,14 +1,21 @@
 import httpStatus from 'http-status';
 import { AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
-import { PopulateTransformUser, TransformUser, UserModel } from '@server/models/user.model';
+import { PopulateTransformUser, UserModel } from '@server/models/user.model';
 import { FollowersPivotModel } from '@server/models/followersPivot.model';
 
 export default {
-  getUser: async (req, res: AppResponse<TransformUser>, next) => {
+  getUser: async (req, res: AppResponse<PopulateTransformUser>, next) => {
     try {
       const { username } = req.params;
-      const findUser = (await UserModel.get({ username })).transform();
+      const findUser = await (
+        await UserModel.get({ username })
+      ).populateTransform({
+        withCategories: true,
+        withFollowers: true,
+        withSubscribers: true,
+        withCounters: true,
+      });
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(findUser));
@@ -34,6 +41,7 @@ export default {
         withCategories: true,
         withFollowers: true,
         withSubscribers: true,
+        withCounters: true,
       });
 
       res.status(httpStatus.OK);
@@ -51,18 +59,58 @@ export default {
       if (userId === target) {
         throw apiResponse.error({
           status: httpStatus.BAD_REQUEST,
-          message: 'You cant to follow yourself'
-        })
+          message: 'You cant to follow yourself',
+        });
       }
 
-      let resultTarget = await FollowersPivotModel.findOne({ target, follower: userId })
+      let resultTarget = await FollowersPivotModel.findOne({ target, follower: userId });
 
       if (!resultTarget) {
-        resultTarget = await new FollowersPivotModel({ target, follower: userId }).save()
+        resultTarget = await new FollowersPivotModel({ target, follower: userId }).save();
       }
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(resultTarget));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  unsubscribe: async (req, res: AppResponse<any>, next) => {
+    try {
+      const userId = req.user._id.toString();
+      const { target } = req.body;
+
+      if (userId === target) {
+        throw apiResponse.error({
+          status: httpStatus.BAD_REQUEST,
+          message: 'You cant to follow yourself',
+        });
+      }
+
+      const findFollower = await FollowersPivotModel.findOneAndRemove({ target, follower: userId });
+
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(findFollower));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  checkSubscribe: async (req, res: AppResponse<boolean>, next) => {
+    try {
+      const userId = req.user._id.toString();
+      const { target } = req.query;
+
+      if (userId === target) {
+        res.status(httpStatus.OK);
+        return res.json(apiResponse.resolve(true));
+      }
+
+      const findFollower = await FollowersPivotModel.findOne({ target, follower: userId });
+
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(!!findFollower));
     } catch (e) {
       return next(e);
     }

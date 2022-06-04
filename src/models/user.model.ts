@@ -43,6 +43,7 @@ interface PopulateOptions {
   withFollowers?: boolean;
   withSubscribers?: boolean;
   withLocations?: boolean;
+  withCounters?: boolean;
 }
 
 export type TransformUser = Pick<User, typeof transformFields[number]>;
@@ -52,6 +53,11 @@ export type PopulateTransformUser = Omit<TransformUser, 'avatar'> & {
   categories?: TransformCategory[];
   followers?: PopulateTransformUser[];
   subscribers?: PopulateTransformUser[];
+  counters?: {
+    followers: number;
+    subscribers: number;
+    locations: number;
+  };
 };
 
 export interface User extends Document, PopulateBySchema {
@@ -69,6 +75,7 @@ export interface User extends Document, PopulateBySchema {
   codeMatches(): Promise<boolean>;
   getCategories(): Promise<TransformCategory[]>;
   getLocations(): Promise<PopulateTransformLocation[]>;
+  getCounters(): Promise<PopulateTransformUser['counters']>;
 }
 
 export interface UserModel extends Model<User> {
@@ -133,14 +140,15 @@ userSchema.method({
   },
 
   async populateTransform(options: PopulateOptions = {}) {
-    const { withCategories, withFollowers, withSubscribers, withLocations } = options;
+    const { withCategories, withFollowers, withSubscribers, withLocations, withCounters } = options;
 
-    const [populateUser, userCategories, followers, subscribers, locations] = await Promise.all([
+    const [populateUser, userCategories, followers, subscribers, locations, counters] = await Promise.all([
       this.populateFields(populateFields),
       withCategories ? this.getCategories() : Promise.resolve([]),
       withFollowers ? this.getFollowers() : Promise.resolve([]),
       withSubscribers ? this.getSubscribers() : Promise.resolve([]),
       withLocations ? this.getLocations() : Promise.resolve([]),
+      withCounters ? this.getCounters() : Promise.resolve([]),
     ]);
 
     return {
@@ -149,6 +157,7 @@ userSchema.method({
       followers,
       subscribers,
       locations,
+      counters,
     };
   },
 
@@ -199,15 +208,37 @@ userSchema.method({
       pivot.populateTransform(),
     );
 
-    return await Promise.all(followerPromises);
+    const listOfFollowers = await Promise.all(followerPromises);
+
+    return listOfFollowers.map(({ follower }) => follower);
   },
 
   async getSubscribers() {
-    const followerPromises = (await FollowersPivotModel.getSubscribers({ targetId: this._id })).map((pivot) =>
+    const subscribersPromises = (await FollowersPivotModel.getSubscribers({ targetId: this._id })).map((pivot) =>
       pivot.populateTransform(),
     );
 
-    return await Promise.all(followerPromises);
+    const listOfSubscribers = await Promise.all(subscribersPromises);
+
+    return listOfSubscribers.map(({ target }) => target);
+  },
+
+  async getCounters(): Promise<PopulateTransformUser['counters']> {
+    const countFollowerPromises = await FollowersPivotModel.count({ target: this._id });
+    const countSubscribersPromises = await FollowersPivotModel.count({ follower: this._id });
+    const countLocationsPromises = await LocationModel.count({ author: this._id });
+
+    const [countFollower, countSubscribers, countLocations] = await Promise.all([
+      countFollowerPromises,
+      countSubscribersPromises,
+      countLocationsPromises,
+    ]);
+
+    return {
+      followers: countFollower,
+      subscribers: countSubscribers,
+      locations: countLocations,
+    };
   },
 });
 
