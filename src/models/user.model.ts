@@ -22,6 +22,7 @@ const transformFields = [
   'firstName',
   'lastName',
   'bio',
+  'verify',
   'phone',
   'role',
   'createdAt',
@@ -67,6 +68,7 @@ export interface User extends Document, PopulateBySchema {
   username?: string;
   firstName?: string;
   lastName?: string;
+  verify?: boolean;
   bio?: string;
   createdAt: Date;
   transform(): TransformUser;
@@ -121,6 +123,10 @@ const userSchema = new Schema<User>(
     bio: {
       type: String,
       trim: true,
+    },
+    verify: {
+      type: Boolean,
+      default: false,
     },
   },
   {
