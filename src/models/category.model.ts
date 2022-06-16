@@ -5,13 +5,15 @@ import { TransformUser } from '@server/models/user.model';
 import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
 import { omitBy } from '@server/utils/omitBy';
 import { Pagination } from '@server/interfaces/helpers';
+import { LocationModel } from '@server/models/location.model';
+import httpStatus from 'http-status';
 
 const transformFields = ['_id', 'slug', 'name', 'author', 'icon', 'description', 'createdAt'] as const;
 const populateFields = ['author'];
 
 export type TransformCategory = Pick<Category, typeof transformFields[number]>;
 
-export type PopulateTransformCategory = Omit<TransformCategory, | 'author'> & {
+export type PopulateTransformCategory = Omit<TransformCategory, 'author'> & {
   author: TransformUser;
 };
 
@@ -20,7 +22,7 @@ export interface Category extends Document {
   name: string;
   description?: string;
   author: Schema.Types.ObjectId;
-  icon?: string
+  icon?: string;
   createdAt: Date;
   transform(): TransformCategory;
   populateTransform(): Promise<PopulateTransformCategory>;
@@ -28,6 +30,7 @@ export interface Category extends Document {
 
 export interface CategoryModel extends Model<Category>, GenerateSlugBySchema {
   get(findParams?: Partial<TransformCategory>): Promise<Category>;
+  removeCategory(findParams?: Partial<TransformCategory>): Promise<boolean>;
   updateCategory(findParams: Partial<TransformCategory>, newCategory: Partial<TransformCategory>): Promise<Category>;
   list(params?: Partial<TransformCategory> & Pagination): Promise<Category[]>;
 }
@@ -112,6 +115,29 @@ categorySchema.static({
 
     if (category) {
       return category;
+    }
+
+    throw apiResponse.error({
+      message: 'Category does not exist',
+    });
+  },
+
+  async removeCategory(findQuery) {
+    const findCategory = await this.findOne({ findQuery });
+
+    if (findCategory) {
+      try {
+        await LocationModel.get({ category: findCategory._id.toString() });
+
+        throw apiResponse.error({
+          status: httpStatus.FORBIDDEN,
+          message: "You can't remove category with location inside",
+        });
+      } catch (e) {
+        await this.deleteOne(findQuery);
+
+        return true;
+      }
     }
 
     throw apiResponse.error({

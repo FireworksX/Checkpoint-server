@@ -10,5 +10,6 @@ router.route('/list').get(categoriesValidation.getList, categoriesController.get
 
 router.route('/create').post(authorize(), categoriesValidation.create, categoriesController.create);
 router.route('/update').post(authorize(), categoriesValidation.update, categoriesController.update);
+router.route('/remove').post(authorize(), categoriesValidation.remove, categoriesController.remove);
 
 export default router;

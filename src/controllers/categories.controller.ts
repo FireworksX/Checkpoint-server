@@ -67,4 +67,15 @@ export default {
       return next(e);
     }
   },
+
+  remove: async (req: AppRequestBody<{ findSlug: string }>, res: AppResponse<boolean>, next) => {
+    try {
+      const result = await CategoryModel.removeCategory({ slug: req.body.findSlug });
+
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(result));
+    } catch (e) {
+      return next(e);
+    }
+  },
 };

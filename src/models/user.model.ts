@@ -78,6 +78,7 @@ export interface User extends Document, PopulateBySchema {
   getCategories(): Promise<TransformCategory[]>;
   getLocations(): Promise<PopulateTransformLocation[]>;
   getCounters(): Promise<PopulateTransformUser['counters']>;
+  updateUser(newUser: Partial<TransformUser>);
 }
 
 export interface UserModel extends Model<User> {
@@ -245,6 +246,18 @@ userSchema.method({
       subscribers: countSubscribers,
       locations: countLocations,
     };
+  },
+
+  async updateUser(newUser: Partial<TransformUser>) {
+    const response = await this.updateOne(newUser, { upsert: true });
+
+    if (response) {
+      return (await UserModel.get({ _id: this._id })).transform();
+    }
+
+    throw apiResponse.error({
+      message: 'User does not exist',
+    });
   },
 });
 

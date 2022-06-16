@@ -6,4 +6,5 @@ export default {
   getList: [param('author'), validationMiddleware],
   create: [body('name').isString(), validationMiddleware],
   update: [body('findSlug').isString(), validationMiddleware],
+  remove: [body('findSlug').isString(), validationMiddleware],
 };

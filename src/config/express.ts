@@ -3,12 +3,13 @@ import passport from 'passport';
 import apiRouter from '@server/routes/v1';
 import passportStrategies from '@server/config/passport';
 import { errorHandler } from '@server/middleware/errorHandler.middleware';
+import { User as UserModel } from '@server/models/user.model';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
-    interface User {
-      _id: 10
+    interface User extends UserModel {
+      _id: string;
     }
   }
 }
@@ -31,7 +32,7 @@ const createServer = (): express.Application => {
 
   app.use('/api/v1', apiRouter);
 
-  app.use(errorHandler)
+  app.use(errorHandler);
 
   return app;
 };

@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
-import { AppResponse } from '@server/interfaces/ApiInterfaces';
+import { AppRequestBody, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
-import { PopulateTransformUser, UserModel } from '@server/models/user.model';
+import { PopulateTransformUser, TransformUser, UserModel } from '@server/models/user.model';
 import { FollowersPivotModel } from '@server/models/followersPivot.model';
 
 export default {
@@ -30,6 +30,18 @@ export default {
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(findUser));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  update: async (req: AppRequestBody<Partial<TransformUser>>, res: AppResponse<TransformUser>, next) => {
+    try {
+      const options = req.body;
+      const newUser = await req.user.updateUser(options);
+
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(newUser));
     } catch (e) {
       return next(e);
     }
