@@ -36,11 +36,14 @@ export default {
     try {
       const options = req.body;
       const userId = req.user._id;
+
+      const titleField = options.fields?.title
+
       const newLocation = await (
         await new LocationModel({
           author: userId,
           ...options,
-          slug: await LocationModel.generateSlug(options.title),
+          slug: await LocationModel.generateSlug(titleField || ''),
         }).save()
       ).populateTransform();
 
@@ -70,7 +73,9 @@ export default {
   ) => {
     try {
       const options = omit(req.body, 'findSlug');
-      const newCategory = await (await LocationModel.updateLocation({ slug: req.body.findSlug }, options)).populateTransform();
+      const newCategory = await (
+        await LocationModel.updateLocation({ slug: req.body.findSlug }, options)
+      ).populateTransform();
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(newCategory));

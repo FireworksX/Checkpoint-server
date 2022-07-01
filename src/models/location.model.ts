@@ -4,14 +4,20 @@ import { PopulateTransformCategory } from '@server/models/category.model';
 import { MODEL_NAMES } from '@server/constants/constants';
 import { TransformUser } from '@server/models/user.model';
 import { PopulateTransformCity } from '@server/models/city.model';
-import { TransformMediaFile } from '@server/models/mediaFile.model';
 import { Pagination } from '@server/interfaces/helpers';
 import httpStatus from 'http-status';
 import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
 import { omitBy } from '@server/utils/omitBy';
+import {
+  LocationAverageBillField,
+  LocationDescriptionField,
+  LocationGalleryField,
+  LocationKitchenField, LocationTagsField,
+  LocationTitleField, LocationWifispeedField,
+} from '@server/interfaces/LocationFields';
 
-const transformFields = ['_id', 'slug', 'title', 'category', 'author', 'city', 'coords', 'createdAt'] as const;
-const populateFields = ['category', 'author', 'city', 'gallery']
+const transformFields = ['_id', 'slug', 'category', 'author', 'fields', 'city', 'coords', 'createdAt'] as const;
+const populateFields = ['category', 'author', 'city'];
 
 export type TransformLocation = Pick<Location, typeof transformFields[number]>;
 
@@ -19,18 +25,25 @@ export type PopulateTransformLocation = Omit<TransformLocation, 'category' | 'au
   category: PopulateTransformCategory[];
   author: TransformUser;
   city: PopulateTransformCity;
-  gallery: TransformMediaFile[];
 };
+
+export type LocationFieldsMap = Partial<{
+  title: LocationTitleField;
+  description: LocationDescriptionField;
+  gallery: LocationGalleryField;
+  kitchen: LocationKitchenField;
+  wifispeed: LocationWifispeedField;
+  averageBill: LocationAverageBillField;
+  tags: LocationTagsField;
+}>;
 
 export interface Location extends Document {
   slug: string;
-  title: string;
+  fields: LocationFieldsMap;
   category: Schema.Types.ObjectId;
   author: Schema.Types.ObjectId;
   city: Schema.Types.ObjectId;
   createdAt: Date;
-  gallery: Schema.Types.ObjectId[];
-  description?: string;
   coords: {
     lat: number;
     lng: number;
@@ -51,17 +64,12 @@ const locationSchema = new Schema<Location, Model<Location>>(
       type: String,
       trim: true,
       required: true,
-      unique: true
-    },
-    title: {
-      type: String,
-      trim: true,
-      required: true,
+      unique: true,
     },
     category: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.Category, required: true },
     author: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.User },
     city: { type: Schema.Types.ObjectId, ref: MODEL_NAMES.City },
-    gallery: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.MediaFile, default: [] }],
+    fields: {},
     coords: {
       lat: { type: Number, required: true },
       lng: { type: Number, required: true },
@@ -73,7 +81,6 @@ const locationSchema = new Schema<Location, Model<Location>>(
 );
 
 locationSchema.method({
-
   transform() {
     const transformed = {};
 
@@ -85,7 +92,7 @@ locationSchema.method({
   },
 
   async populateTransform() {
-    const filedPromises = await Promise.all(populateFields.map((field) => this.populate(field)))
+    const filedPromises = await Promise.all(populateFields.map((field) => this.populate(field)));
 
     return this.transform(filedPromises);
   },
@@ -129,10 +136,8 @@ locationSchema.static({
       status: httpStatus.NOT_FOUND,
     });
   },
-
-
 });
 
-generateSlugBySchema(locationSchema)
+generateSlugBySchema(locationSchema);
 
 export const LocationModel = model<Location, LocationModel>(MODEL_NAMES.Location, locationSchema);

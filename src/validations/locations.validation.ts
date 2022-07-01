@@ -5,7 +5,7 @@ import { coordsValidator } from '@server/validations/coords.validator';
 export default {
   getDetail: [param('slug').exists().isString(), validationMiddleware],
   create: [
-    body('title').isString(),
+    body('fields').exists(),
     body('category').isString(),
     body('city').isString(),
     body('coords').custom(coordsValidator),

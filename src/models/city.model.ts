@@ -7,7 +7,7 @@ import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySche
 import { GenerateSlugBySchema, generateSlugBySchema } from '@server/utils/generateSlugBySchema';
 import { TransformCityRate } from '@server/models/cityRate.model';
 
-const transformFields = ['_id', 'slug', 'name', 'owner', 'gallery', 'facts', 'rates', 'createdAt'] as const;
+const transformFields = ['_id', 'slug', 'name', 'owner', 'gallery', 'facts', 'rates', 'geo', 'createdAt'] as const;
 const populateFields = ['owner', 'gallery', 'rates'];
 
 export type TransformCity = Pick<City, typeof transformFields[number]>;
@@ -25,6 +25,11 @@ export interface City extends Document, PopulateBySchema {
   facts: { name: string; value: string }[];
   rates: Types.ObjectId[];
   createdAt: Date;
+  geo: {
+    lat: number
+    lng: number
+    zoom: number
+  }
   transform(): TransformCity;
   populateTransform(): Promise<PopulateTransformCity>;
 }
@@ -57,6 +62,20 @@ const citySchema = new Schema<City>(
       required: true,
       type: Schema.Types.ObjectId,
       ref: MODEL_NAMES.User,
+    },
+    geo: {
+      lat: {
+        default: 0,
+        type: Number,
+      },
+      lng: {
+        default: 0,
+        type: Number,
+      },
+      zoom: {
+        default: 10,
+        type: Number,
+      }
     },
     facts: [{ name: { type: String }, value: { type: String } }],
     rates: [{ type: Schema.Types.ObjectId, ref: MODEL_NAMES.CityRate }],
