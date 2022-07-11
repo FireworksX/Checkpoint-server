@@ -12,12 +12,25 @@ import {
   LocationAverageBillField,
   LocationDescriptionField,
   LocationGalleryField,
-  LocationKitchenField, LocationTagsField,
-  LocationTitleField, LocationWifispeedField,
+  LocationKitchenField,
+  LocationTagsField,
+  LocationTitleField,
+  LocationWifispeedField,
 } from '@server/interfaces/LocationFields';
 
 const transformFields = ['_id', 'slug', 'category', 'author', 'fields', 'city', 'coords', 'createdAt'] as const;
-const populateFields = ['category', 'author', 'city'];
+const populateFields = [
+  'category',
+  'author',
+  'city',
+  {
+    path: 'fields',
+    populate: {
+      path: 'gallery',
+      model: MODEL_NAMES.MediaFile,
+    },
+  },
+];
 
 export type TransformLocation = Pick<Location, typeof transformFields[number]>;
 
@@ -55,6 +68,7 @@ export interface Location extends Document {
 export interface LocationModel extends Model<Location>, GenerateSlugBySchema {
   get(findParams?: Partial<TransformLocation>): Promise<Location>;
   updateLocation(findParams: Partial<TransformLocation>, newLocation: Partial<TransformLocation>): Promise<Location>;
+  removeLocation(options: { locationSlug: string; userId: string }): Promise<boolean>;
   list(params?: Partial<TransformLocation> & Pagination): Promise<Location[]>;
 }
 

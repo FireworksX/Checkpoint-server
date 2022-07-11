@@ -1,7 +1,6 @@
 import httpStatus from 'http-status';
 import { AppRequestBody, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
-import { CityModel } from '@server/models/city.model';
 import { omit } from '@server/utils/omit';
 import { LocationModel, PopulateTransformLocation, TransformLocation } from '@server/models/location.model';
 
@@ -20,10 +19,11 @@ export default {
     }
   },
 
-  getList: async (req, res: AppResponse<TransformLocation[]>, next) => {
+  getList: async (req, res: AppResponse<PopulateTransformLocation[]>, next) => {
     try {
       const params = req.query;
-      const listOfCity = (await LocationModel.list(params)).map((location) => location.transform());
+      const listOfCityPromises = (await LocationModel.list(params)).map((location) => location.populateTransform());
+      const listOfCity = await Promise.all(listOfCityPromises);
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(listOfCity));
@@ -37,7 +37,7 @@ export default {
       const options = req.body;
       const userId = req.user._id;
 
-      const titleField = options.fields?.title
+      const titleField = options.fields?.title;
 
       const newLocation = await (
         await new LocationModel({
@@ -54,13 +54,30 @@ export default {
     }
   },
 
-  delete: async (req: AppRequestBody<{ slug: string }>, res: AppResponse<any>, next) => {
+  delete: async (req: AppRequestBody<{ slug: string }>, res: AppResponse<boolean>, next) => {
     try {
+      const user = req.user;
       const { slug } = req.body;
-      const removeResult = await CityModel.findOneAndDelete({ slug });
+
+      if (user.role === 'admin') {
+        await LocationModel.findOneAndDelete({ slug });
+        res.status(httpStatus.OK);
+        return res.json(apiResponse.resolve(true));
+      }
+
+      const findLocation = await LocationModel.findOne({ slug, author: user._id });
+
+      if (!findLocation) {
+        throw apiResponse.error({
+          message: 'You can`t remove stranger locations',
+          status: httpStatus.FORBIDDEN,
+        });
+      }
+
+      await LocationModel.findOneAndDelete({ slug });
 
       res.status(httpStatus.OK);
-      return res.json(apiResponse.resolve(removeResult));
+      return res.json(apiResponse.resolve(true));
     } catch (e) {
       return next(e);
     }
