@@ -8,6 +8,7 @@ import citiesRoute from './cities.route';
 import mediaRoute from './media.route';
 import locationsRoute from './locations.route';
 import cityRatesRoute from './cityRates.route';
+import likesRoute from './likes.route';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/cities', citiesRoute);
 router.use('/cityRates', cityRatesRoute);
 router.use('/media', mediaRoute);
 router.use('/locations', locationsRoute);
+router.use('/likes', likesRoute);
 
 export default router;

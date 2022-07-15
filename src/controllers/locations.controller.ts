@@ -3,30 +3,40 @@ import { AppRequestBody, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
 import { omit } from '@server/utils/omit';
 import { LocationModel, PopulateTransformLocation, TransformLocation } from '@server/models/location.model';
+import { mergeLikes, WithLikes } from '@server/utils/mergeLikes';
 
 type CreateLocationBody = Omit<TransformLocation, '_id' | 'slug' | 'createdAt'>;
 
 export default {
-  getDetail: async (req, res: AppResponse<PopulateTransformLocation>, next) => {
+  getDetail: async (req, res: AppResponse<WithLikes<PopulateTransformLocation>>, next) => {
     try {
       const { slug } = req.params;
       const findCity = await (await LocationModel.get({ slug })).populateTransform();
 
+      const cityWithLikes = await mergeLikes(findCity, {
+        type: 'location',
+        currentUserId: req?.user?._id,
+      });
+
       res.status(httpStatus.OK);
-      return res.json(apiResponse.resolve(findCity));
+      return res.json(apiResponse.resolve(cityWithLikes));
     } catch (e) {
       return next(e);
     }
   },
 
-  getList: async (req, res: AppResponse<PopulateTransformLocation[]>, next) => {
+  getList: async (req, res: AppResponse<WithLikes<PopulateTransformLocation>[]>, next) => {
     try {
       const params = req.query;
       const listOfCityPromises = (await LocationModel.list(params)).map((location) => location.populateTransform());
       const listOfCity = await Promise.all(listOfCityPromises);
 
+      const listWithLikes = await Promise.all(
+        listOfCity.map((location) => mergeLikes(location, { type: 'location', currentUserId: req?.user?._id })),
+      );
+
       res.status(httpStatus.OK);
-      return res.json(apiResponse.resolve(listOfCity));
+      return res.json(apiResponse.resolve(listWithLikes));
     } catch (e) {
       return next(e);
     }

@@ -5,8 +5,8 @@ import { authorize } from '@server/middleware/auth.middleware';
 
 const router = express.Router();
 
-router.route('/detail/:slug').get(locationsValidation.getDetail, locationsController.getDetail);
-router.route('/list').get(locationsController.getList);
+router.route('/detail/:slug').get(authorize(), locationsValidation.getDetail, locationsController.getDetail);
+router.route('/list').get(authorize(), locationsController.getList);
 
 router.route('/delete').post(authorize(), locationsValidation.delete, locationsController.delete);
 router.route('/create').post(authorize(), locationsValidation.create, locationsController.create);
