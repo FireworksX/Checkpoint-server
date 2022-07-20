@@ -9,6 +9,7 @@ import mediaRoute from './media.route';
 import locationsRoute from './locations.route';
 import cityRatesRoute from './cityRates.route';
 import likesRoute from './likes.route';
+import feedRoute from './feed.route';
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use('/cityRates', cityRatesRoute);
 router.use('/media', mediaRoute);
 router.use('/locations', locationsRoute);
 router.use('/likes', likesRoute);
+router.use('/feed', feedRoute);
 
 export default router;

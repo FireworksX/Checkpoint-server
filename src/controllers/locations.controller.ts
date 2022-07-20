@@ -4,6 +4,7 @@ import apiResponse from '@server/utils/apiResponse';
 import { omit } from '@server/utils/omit';
 import { LocationModel, PopulateTransformLocation, TransformLocation } from '@server/models/location.model';
 import { mergeLikes, WithLikes } from '@server/utils/mergeLikes';
+import { LikesPivotModel } from '@server/models/likesPivot.model';
 
 type CreateLocationBody = Omit<TransformLocation, '_id' | 'slug' | 'createdAt'>;
 
@@ -27,7 +28,17 @@ export default {
 
   getList: async (req, res: AppResponse<WithLikes<PopulateTransformLocation>[]>, next) => {
     try {
-      const params = req.query;
+      let params = req.query;
+
+      if (params?.onlyLikes) {
+        const allLikes = await LikesPivotModel.find({ user: req?.user?._id, type: 'location' });
+        const allTargets = allLikes.map((like) => like.target);
+
+        params = {
+          _id: { $in: allTargets },
+        };
+      }
+
       const listOfCityPromises = (await LocationModel.list(params)).map((location) => location.populateTransform());
       const listOfCity = await Promise.all(listOfCityPromises);
 

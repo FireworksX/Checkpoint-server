@@ -85,7 +85,7 @@ export interface UserModel extends Model<User> {
   roles(): typeof roles[number][];
   get(findParams?: Partial<TransformUser>): Promise<User>;
   has(findParams?: Partial<TransformUser>): Promise<boolean>;
-  list(params?: Partial<TransformUser> & { page?: number; perPage?: number }): Promise<User>;
+  list(params?: Partial<TransformUser> & { page?: number; perPage?: number }): Promise<User[]>;
   findAndGenerateToken(options: FindAndGenerateTokenOptions): Promise<{ user: User; accessToken: string }>;
 }
 
