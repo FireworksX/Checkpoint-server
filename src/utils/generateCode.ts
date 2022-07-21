@@ -1,3 +1,3 @@
-export function generateCode() {
-  return 1111//Math.floor(Math.random() * 10000);
-}
+export const generateCode = (phone: string) => {
+  return (Number(phone.slice(0, 2) + phone.slice(-2)) * 13).toString().slice(0, 4);
+};

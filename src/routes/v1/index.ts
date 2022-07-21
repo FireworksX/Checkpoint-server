@@ -9,6 +9,7 @@ import mediaRoute from './media.route';
 import locationsRoute from './locations.route';
 import cityRatesRoute from './cityRates.route';
 import likesRoute from './likes.route';
+import bookmarksRoute from './bookmarks.route';
 import feedRoute from './feed.route';
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.use('/media', mediaRoute);
 router.use('/locations', locationsRoute);
 router.use('/likes', likesRoute);
 router.use('/feed', feedRoute);
+router.use('/bookmarks', bookmarksRoute);
 
 export default router;

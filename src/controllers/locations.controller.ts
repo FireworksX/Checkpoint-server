@@ -5,28 +5,34 @@ import { omit } from '@server/utils/omit';
 import { LocationModel, PopulateTransformLocation, TransformLocation } from '@server/models/location.model';
 import { mergeLikes, WithLikes } from '@server/utils/mergeLikes';
 import { LikesPivotModel } from '@server/models/likesPivot.model';
+import { mergeBookmarks, WithBookmarks } from '@server/utils/mergeBookmarks';
 
 type CreateLocationBody = Omit<TransformLocation, '_id' | 'slug' | 'createdAt'>;
 
 export default {
-  getDetail: async (req, res: AppResponse<WithLikes<PopulateTransformLocation>>, next) => {
+  getDetail: async (req, res: AppResponse<WithBookmarks<WithLikes<PopulateTransformLocation>>>, next) => {
     try {
       const { slug } = req.params;
-      const findCity = await (await LocationModel.get({ slug })).populateTransform();
+      const findLocation = await (await LocationModel.get({ slug })).populateTransform();
 
-      const cityWithLikes = await mergeLikes(findCity, {
+      const locationWithLikes = await mergeLikes(findLocation, {
         type: 'location',
         currentUserId: req?.user?._id,
       });
 
+      const locationWithBookmarks = await mergeBookmarks(locationWithLikes, {
+        type: 'location',
+        currentUserId: req?.user?._id || '',
+      });
+
       res.status(httpStatus.OK);
-      return res.json(apiResponse.resolve(cityWithLikes));
+      return res.json(apiResponse.resolve(locationWithBookmarks));
     } catch (e) {
       return next(e);
     }
   },
 
-  getList: async (req, res: AppResponse<WithLikes<PopulateTransformLocation>[]>, next) => {
+  getList: async (req, res: AppResponse<WithBookmarks<WithLikes<PopulateTransformLocation>>[]>, next) => {
     try {
       let params = req.query;
 
@@ -39,15 +45,31 @@ export default {
         };
       }
 
+      if (params?.owner) {
+        const allLikes = await LikesPivotModel.find({ user: params.owner, type: 'location' });
+        const allTargets = allLikes.map((like) => like.target);
+
+        const ownerLocations = (await LocationModel.list({ author: params.owner })).map(
+          (location) => location.transform()._id,
+        );
+
+        params = {
+          _id: { $in: [...allTargets, ...ownerLocations] },
+        };
+      }
+
       const listOfCityPromises = (await LocationModel.list(params)).map((location) => location.populateTransform());
       const listOfCity = await Promise.all(listOfCityPromises);
 
       const listWithLikes = await Promise.all(
         listOfCity.map((location) => mergeLikes(location, { type: 'location', currentUserId: req?.user?._id })),
       );
+      const listWithBookmarks = await Promise.all(
+        listWithLikes.map((location) => mergeBookmarks(location, { type: 'location', currentUserId: req?.user?._id })),
+      );
 
       res.status(httpStatus.OK);
-      return res.json(apiResponse.resolve(listWithLikes));
+      return res.json(apiResponse.resolve(listWithBookmarks));
     } catch (e) {
       return next(e);
     }

@@ -83,7 +83,7 @@ phoneValidationSchema.static({
 
     const expires = dayjs().add(30, 'seconds').toDate();
     const tokenObject = new PhoneValidationModel({
-      code: generateCode(),
+      code: generateCode(phone),
       phone,
       expires,
     });

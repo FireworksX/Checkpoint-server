@@ -12,4 +12,5 @@ export const MODEL_NAMES = createConstants(
   'CityRate',
   'FollowersPivot',
   'LikesPivot',
+  'BookmarksPivot'
 );
