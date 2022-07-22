@@ -9,6 +9,7 @@
     "typescript-maker": "./bin/generateApp.js"
   },
   "scripts": {
+    "pm2": "pm2 start",
     "start": "ts-node -r tsconfig-paths/register -r dotenv/config src/index",
     "dev": "nodemon --config restart.json",
     "clean": "rm -rf coverage build tmp",
@@ -36,6 +37,7 @@
     "node-fetch": "2",
     "passport": "^0.5.2",
     "passport-jwt": "^4.0.0",
+    "pm2": "^5.2.0",
     "slugify": "^1.6.5",
     "tslib": "~2.3.0",
     "uuid": "^8.3.2",
