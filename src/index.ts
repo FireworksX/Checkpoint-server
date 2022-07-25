@@ -19,6 +19,7 @@ async function startServer() {
   await createMongooseConnection();
 
   const app = createServer();
+  console.log(host, port);
   const server = http.createServer(app).listen({ host, port }, () => {
     const addressInfo = server.address() as AddressInfo;
     logger.info(`Server ready at http://${addressInfo.address}:${addressInfo.port}`);
