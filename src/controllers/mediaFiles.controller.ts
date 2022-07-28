@@ -3,7 +3,6 @@ import { AppRequestBody, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
 import { MediaFileModel, TransformMediaFile } from '@server/models/mediaFile.model';
 import { convertMimeType } from '@server/utils/convertMediaType';
-import path from 'path';
 import { TEMP_DIR } from '@server/middleware/mediaUpload.middleware';
 import fs from 'fs'
 
@@ -13,7 +12,7 @@ export default {
       const { mimetype, filename, size } = req.file;
       const userId = req.user._id;
       const type = convertMimeType(req.file.mimetype as 'default');
-      const fullPath = path.resolve(TEMP_DIR, type);
+      const fullPath = `${process.env.CURRENT_DOMAIN}/${TEMP_DIR}/${type}`
 
       const newMediaFile = await (
         await new MediaFileModel({
