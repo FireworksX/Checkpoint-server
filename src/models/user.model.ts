@@ -13,6 +13,7 @@ import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySche
 import { CategoryModel, TransformCategory } from '@server/models/category.model';
 import { LocationModel, PopulateTransformLocation } from '@server/models/location.model';
 import { FollowersPivotModel } from '@server/models/followersPivot.model';
+import { countries, CountryCode } from '@server/utils/countryPhoneCodes';
 
 const roles = ['user', 'admin'] as const;
 const transformFields = [
@@ -64,6 +65,7 @@ export type PopulateTransformUser = Omit<TransformUser, 'avatar'> & {
 export interface User extends Document, PopulateBySchema {
   phone: string;
   role: typeof roles[number];
+  country: CountryCode
   avatar?: Schema.Types.ObjectId;
   username?: string;
   firstName?: string;
@@ -108,6 +110,10 @@ const userSchema = new Schema<User>(
       type: String,
       enum: roles,
       default: 'user',
+    },
+    country: {
+      type: String,
+      enum: countries,
     },
     avatar: {
       type: Schema.Types.ObjectId,

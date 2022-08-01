@@ -11,7 +11,7 @@ export const phoneValidator: CustomValidator = (value: any) => {
   }
 
   if (typeof newValue === 'string') {
-    if (newValue.length > 10 && newValue.length < 13) {
+    if (newValue.length >= 10 && newValue.length < 13) {
       return true
     }
   }

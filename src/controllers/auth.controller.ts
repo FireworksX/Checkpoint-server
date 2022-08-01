@@ -1,17 +1,24 @@
 import httpStatus from 'http-status';
-import { AppResponse } from '@server/interfaces/ApiInterfaces';
+import { AppRequestBody, AppRequestQuery, AppResponse } from '@server/interfaces/ApiInterfaces';
 import apiResponse from '@server/utils/apiResponse';
 import { TransformUser, UserModel } from '@server/models/user.model';
 import { GenerateTokenResponse, generateTokenResponse } from '@server/utils/generateTokenResponse';
 import { omit } from '@server/utils/omit';
 import { PhoneValidationModel, CreatedTicket } from '@server/models/phoneValidation.model';
 import { RefreshTokenModel } from '@server/models/refreshToken.model';
+import { CountryCode } from '@server/utils/countryPhoneCodes';
+import { buildPhone } from '@server/utils/buildPhone';
 
 export default {
-  phoneValidationCreate: async (req, res: AppResponse<CreatedTicket>, next) => {
+  phoneValidationCreate: async (
+    req: AppRequestBody<{ phone: string; country: CountryCode }>,
+    res: AppResponse<CreatedTicket>,
+    next,
+  ) => {
     try {
-      const { phone } = req.body;
-      const validationTicket = await PhoneValidationModel.generate(phone);
+      const { phone, country } = req.body;
+      const fullPhone = buildPhone(phone, country);
+      const validationTicket = await PhoneValidationModel.generate(fullPhone);
 
       res.status(httpStatus.CREATED);
       return res.json(apiResponse.resolve(validationTicket));
@@ -20,9 +27,16 @@ export default {
     }
   },
 
-  phoneValidationCheck: async (req, res: AppResponse<boolean>, next) => {
+  phoneValidationCheck: async (
+    req: AppRequestQuery<{ phone: string; country: CountryCode; code: string }>,
+    res: AppResponse<boolean>,
+    next,
+  ) => {
     try {
-      const validationTicket = await PhoneValidationModel.has(req.query);
+      const { phone, country, code } = req.query;
+      const fullPhone = buildPhone(phone, country);
+
+      const validationTicket = await PhoneValidationModel.has({ phone: fullPhone, code });
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(validationTicket));
@@ -33,7 +47,7 @@ export default {
 
   register: async (req, res: AppResponse<{ token: GenerateTokenResponse; user: TransformUser }>, next) => {
     try {
-      const userData = omit(req.body, 'role');
+      const userData = omit(req.body, 'role', 'verify');
       const user = await new UserModel(userData).save();
       const userTransformed = user.transform();
       const token = await generateTokenResponse(user, user.token());

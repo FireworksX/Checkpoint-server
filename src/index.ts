@@ -12,19 +12,23 @@ import { createMongooseConnection } from '@config/mongoose';
 
 const port = process.env.PORT || '5000';
 
+
 async function startServer() {
   await createMongooseConnection();
 
-  const app = createServer();
+  const app = createServer()
 
-  app.listen(port, () => {
-    logger.info(`Server ready at http://localhost:${port}`);
-  })
+  // if (process.env.NODE_ENV === 'development') {
+  //   const server = http.createServer(app).listen({ host, port }, () => {
+  //     const addressInfo = server.address() as AddressInfo;
+  //     logger.info(`Server ready at http://${addressInfo.address}:${addressInfo.port}`);
+  //   });
+  // } else {
+    app.listen(port, () => {
+      logger.info(`Server ready at http://localhost:${port}`);
+    });
+  // }
 
-  // const server = http.createServer(app).listen({ host, port }, () => {
-  //   const addressInfo = server.address() as AddressInfo;
-  //   logger.info(`Server ready at http://${addressInfo.address}:${addressInfo.port}`);
-  // });
 
   const signalTraps: NodeJS.Signals[] = ['SIGTERM', 'SIGINT', 'SIGUSR2'];
   signalTraps.forEach((type) => {

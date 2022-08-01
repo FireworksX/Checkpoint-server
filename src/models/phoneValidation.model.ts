@@ -67,7 +67,7 @@ phoneValidationSchema.static({
   async has({ phone, code }) {
     const ticket = await this.findOne({ phone, code });
 
-    return !!ticket
+    return !!ticket;
   },
 
   async generate(phone: string) {
@@ -75,7 +75,7 @@ phoneValidationSchema.static({
 
     if (findTicket) {
       if (dayjs(findTicket.expires).isAfter(dayjs())) {
-        return omit(findTicket.transform(), 'code')
+        return omit(findTicket.transform(), 'code');
       } else {
         await PhoneValidationModel.remove({ phone });
       }
