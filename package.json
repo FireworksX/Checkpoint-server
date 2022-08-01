@@ -10,6 +10,7 @@
   },
   "scripts": {
     "pm2": "pm2 start",
+    "restart": "git pull && pm2 restart checkpoint-server",
     "start": "ts-node -r tsconfig-paths/register -r dotenv/config src/index",
     "dev": "nodemon --config restart.json",
     "clean": "rm -rf coverage build tmp",
