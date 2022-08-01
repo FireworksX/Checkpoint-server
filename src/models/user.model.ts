@@ -14,6 +14,7 @@ import { CategoryModel, TransformCategory } from '@server/models/category.model'
 import { LocationModel, PopulateTransformLocation } from '@server/models/location.model';
 import { FollowersPivotModel } from '@server/models/followersPivot.model';
 import { countries, CountryCode } from '@server/utils/countryPhoneCodes';
+import { buildPhone } from '@server/utils/buildPhone';
 
 const roles = ['user', 'admin'] as const;
 const transformFields = [
@@ -188,8 +189,10 @@ userSchema.method({
   },
 
   async codeMatches(code: string) {
+    const fullPhone = buildPhone(this.phone, this.country)
+
     return await PhoneValidationModel.has({
-      phone: this.phone,
+      phone: fullPhone,
       code,
     });
   },
