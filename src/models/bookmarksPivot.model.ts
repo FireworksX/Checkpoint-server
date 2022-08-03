@@ -3,19 +3,16 @@ import { MODEL_NAMES } from '@server/constants/constants';
 import { PopulateTransformUser } from '@server/models/user.model';
 import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySchema';
 import { GenerateSlugBySchema } from '@server/utils/generateSlugBySchema';
-import { Pagination } from '@server/interfaces/helpers';
 import { LIKES_TYPES } from '@server/models/likesPivot.model';
 import { TransformCategory } from '@server/models/category.model';
 
 const transformFields = ['_id', 'user', 'target', 'category', 'type', 'createdAt'] as const;
 const populateFields = ['user', 'category'];
 
-export const BOOKMARKS_TYPES = ['location'] as const
+export const BOOKMARKS_TYPES = ['location'] as const;
 
-export type BookmarksType = typeof LIKES_TYPES[number]
+export type BookmarksType = typeof LIKES_TYPES[number];
 export type TransformBookmarksPivot = Pick<BookmarksPivot, typeof transformFields[number]>;
-
-type GetOptions = Pagination & { targetId: string };
 
 export type PopulateTransformBookmarksPivot = Omit<TransformBookmarksPivot, 'user' | 'category'> & {
   user: PopulateTransformUser;
@@ -32,10 +29,7 @@ export interface BookmarksPivot extends Document, PopulateBySchema {
   populateTransform(): Promise<PopulateTransformBookmarksPivot>;
 }
 
-export interface BookmarksPivotModel extends Model<BookmarksPivot>, GenerateSlugBySchema {
-  getBookmarks(options: GetOptions): Promise<BookmarksPivot[]>;
-  getSubscribers(options: GetOptions): Promise<BookmarksPivot[]>;
-}
+export interface BookmarksPivotModel extends Model<BookmarksPivot>, GenerateSlugBySchema {}
 
 const bookmarksPivotSchema = new Schema<BookmarksPivot>(
   {
@@ -52,8 +46,8 @@ const bookmarksPivotSchema = new Schema<BookmarksPivot>(
     },
     type: {
       type: String,
-      enum: BOOKMARKS_TYPES
-    }
+      enum: BOOKMARKS_TYPES,
+    },
   },
   {
     timestamps: true,
@@ -73,19 +67,6 @@ bookmarksPivotSchema.method({
 
   populateTransform() {
     return this.populateFields(populateFields);
-  },
-});
-
-/**
- * Statics
- */
-bookmarksPivotSchema.static({
-  getBookmarks({ skip = 0, limit, targetId }: GetOptions) {
-    return this.find({ target: targetId }).sort({ createdAt: -1 }).skip(skip).limit(limit).exec();
-  },
-
-  getSubscribers({ skip = 0, limit, targetId }: GetOptions) {
-    return this.find({ follower: targetId }).sort({ createdAt: -1 }).skip(skip).limit(limit).exec();
   },
 });
 

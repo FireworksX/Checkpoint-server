@@ -6,6 +6,7 @@ import { LocationModel, PopulateTransformLocation, TransformLocation } from '@se
 import { mergeLikes, WithLikes } from '@server/utils/mergeLikes';
 import { LikesPivotModel } from '@server/models/likesPivot.model';
 import { mergeBookmarks, WithBookmarks } from '@server/utils/mergeBookmarks';
+import { BookmarksPivotModel } from '@server/models/bookmarksPivot.model';
 
 type CreateLocationBody = Omit<TransformLocation, '_id' | 'slug' | 'createdAt'>;
 
@@ -35,6 +36,7 @@ export default {
   getList: async (req, res: AppResponse<WithBookmarks<WithLikes<PopulateTransformLocation>>[]>, next) => {
     try {
       let params = req.query;
+      const { author, category } = params;
 
       if (params?.onlyLikes) {
         const allLikes = await LikesPivotModel.find({ user: req?.user?._id, type: 'location' });
@@ -58,11 +60,37 @@ export default {
         };
       }
 
+      let bookmarkLocations = []
+
+      if (!params?.onlyLikes && !params?.owner) {
+        const findParams: any = { type: 'location', user: author }
+        if (category) {
+          findParams.category = category
+        }
+
+        const allBookmarks = await BookmarksPivotModel.find(findParams);
+
+        const ids = allBookmarks.map(({ target }) => target);
+        const bookmarkLocationsPromises = (
+          await LocationModel.list({
+            _id: {
+              $in: ids,
+            },
+          })
+        ).map((location) => location.populateTransform());
+
+        bookmarkLocations = await Promise.all(bookmarkLocationsPromises)
+
+        console.log(ids, bookmarkLocationsPromises, bookmarkLocations);
+      }
+
       const listOfCityPromises = (await LocationModel.list(params)).map((location) => location.populateTransform());
       const listOfCity = await Promise.all(listOfCityPromises);
 
+      const combinedLocations = [...bookmarkLocations, ...listOfCity]
+
       const listWithLikes = await Promise.all(
-        listOfCity.map((location) => mergeLikes(location, { type: 'location', currentUserId: req?.user?._id })),
+        combinedLocations.map((location) => mergeLikes(location, { type: 'location', currentUserId: req?.user?._id })),
       );
       const listWithBookmarks = await Promise.all(
         listWithLikes.map((location) => mergeBookmarks(location, { type: 'location', currentUserId: req?.user?._id })),
