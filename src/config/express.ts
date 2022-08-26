@@ -4,6 +4,7 @@ import apiRouter from '@server/routes/v1';
 import passportStrategies from '@server/config/passport';
 import { errorHandler } from '@server/middleware/errorHandler.middleware';
 import { User as UserModel } from '@server/models/user.model';
+import mailService from '@server/services/mailService';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -16,6 +17,9 @@ declare global {
 
 const createServer = (): express.Application => {
   const app = express();
+
+  const { service, middleware } = mailService;
+  app.use(middleware(service()));
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());

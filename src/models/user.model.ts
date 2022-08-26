@@ -6,7 +6,6 @@ import apiResponse from '@server/utils/apiResponse';
 import httpStatus from 'http-status';
 import { v4 as uuidv4 } from 'uuid';
 import { omitBy } from '@server/utils/omitBy';
-import { PhoneValidationModel } from '@server/models/phoneValidation.model';
 import { MODEL_NAMES } from '@server/constants/constants';
 import { TransformMediaFile } from '@server/models/mediaFile.model';
 import { PopulateBySchema, populateBySchema } from '@server/utils/populateBySchema';
@@ -14,7 +13,7 @@ import { CategoryModel, TransformCategory } from '@server/models/category.model'
 import { LocationModel, PopulateTransformLocation } from '@server/models/location.model';
 import { FollowersPivotModel } from '@server/models/followersPivot.model';
 import { countries, CountryCode } from '@server/utils/countryPhoneCodes';
-import { buildPhone } from '@server/utils/buildPhone';
+import { MailValidationModel } from '@server/models/mailValidation.model';
 
 const roles = ['user', 'admin'] as const;
 const transformFields = [
@@ -25,7 +24,7 @@ const transformFields = [
   'lastName',
   'bio',
   'verify',
-  'phone',
+  'mail',
   'role',
   'createdAt',
 ] as const;
@@ -33,11 +32,11 @@ const transformFields = [
 const populateFields = ['avatar'];
 
 interface FindAndGenerateTokenOptions {
-  phone: string;
+  mail: string;
   code?: string;
   refreshObject?: {
     expires: number;
-    phone: string;
+    mail: string;
   };
 }
 
@@ -64,9 +63,9 @@ export type PopulateTransformUser = Omit<TransformUser, 'avatar'> & {
 };
 
 export interface User extends Document, PopulateBySchema {
-  phone: string;
+  mail: string;
   role: typeof roles[number];
-  country: CountryCode
+  country: CountryCode;
   avatar?: Schema.Types.ObjectId;
   username?: string;
   firstName?: string;
@@ -94,7 +93,7 @@ export interface UserModel extends Model<User> {
 
 const userSchema = new Schema<User>(
   {
-    phone: {
+    mail: {
       type: String,
       required: true,
       trim: true,
@@ -189,10 +188,8 @@ userSchema.method({
   },
 
   async codeMatches(code: string) {
-    const fullPhone = buildPhone(this.phone, this.country)
-
-    return await PhoneValidationModel.has({
-      phone: fullPhone,
+    return await MailValidationModel.has({
+      mail: this.mail,
       code,
     });
   },
@@ -294,12 +291,12 @@ userSchema.static({
   },
 
   async findAndGenerateToken(options: FindAndGenerateTokenOptions) {
-    const { phone, code, refreshObject } = options;
-    if (!phone) {
-      throw new Error('An phone is required to generate a token');
+    const { mail, code, refreshObject } = options;
+    if (!mail) {
+      throw new Error('An mail is required to generate a token');
     }
 
-    const user = await this.findOne({ phone }).exec();
+    const user = await this.findOne({ mail }).exec();
     const err = {
       status: 400,
       isPublic: true,
@@ -311,7 +308,7 @@ userSchema.static({
         return { user, accessToken: user.token() };
       }
       err.message = 'Incorrect phone or validation code';
-    } else if (refreshObject && refreshObject.phone === phone) {
+    } else if (refreshObject && refreshObject.mail === mail) {
       if (dayjs(refreshObject.expires).isBefore(dayjs())) {
         err.message = 'Invalid refresh token.';
       } else {

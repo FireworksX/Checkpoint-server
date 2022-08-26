@@ -14,12 +14,12 @@ export interface PhoneValidation extends Document {
 }
 
 interface PhoneValidationModel extends Model<PhoneValidation> {
-  generate(phone: string): Promise<CreatedTicket>;
-  get(phone: string): Promise<CreatedTicket>;
+  generate(phone: string): Promise<CreatedPhoneTicket>;
+  get(phone: string): Promise<CreatedPhoneTicket>;
   has(options: { phone: string; code: string }): Promise<boolean>;
 }
 
-export type CreatedTicket = Omit<PhoneValidation, 'code'>;
+export type CreatedPhoneTicket = Omit<PhoneValidation, 'code'>;
 export type TransformPhoneTicket = Pick<PhoneValidation, typeof transformFields[number]>;
 
 const transformFields = ['_id', 'code', 'phone', 'expires', 'createdAt'] as const;
@@ -83,7 +83,7 @@ phoneValidationSchema.static({
 
     const expires = dayjs().add(30, 'seconds').toDate();
     const tokenObject = new PhoneValidationModel({
-      code: generateCode(phone),
+      code: generateCode(),
       phone,
       expires,
     });

@@ -7,13 +7,13 @@ import { MODEL_NAMES } from '@server/constants/constants';
 interface RefreshToken extends Document {
   token: string;
   userId: User['_id'];
-  phone: string;
+  mail: string;
   expires: number;
 }
 
 export interface RefreshTokenGenerateUser {
   _id?: string;
-  phone: string;
+  mail: string;
 }
 
 interface RefreshTokenModel extends Model<RefreshToken> {
@@ -31,9 +31,8 @@ const refreshTokenSchema = new mongoose.Schema<RefreshToken>({
     ref: MODEL_NAMES.User,
     required: true,
   },
-  phone: {
+  mail: {
     type: String,
-    ref: MODEL_NAMES.User,
     required: true,
   },
   expires: { type: Number },
@@ -42,13 +41,13 @@ const refreshTokenSchema = new mongoose.Schema<RefreshToken>({
 refreshTokenSchema.statics = {
   async generate(user: RefreshTokenGenerateUser) {
     const userId = user._id;
-    const phone = user.phone;
+    const mail = user.mail;
     const token = `${userId}.${crypto.randomBytes(40).toString('hex')}`;
     const expires = dayjs().add(30, 'days').toDate();
     const tokenObject = new RefreshTokenModel({
       token,
       userId,
-      phone,
+      mail,
       expires,
     });
     await tokenObject.save();

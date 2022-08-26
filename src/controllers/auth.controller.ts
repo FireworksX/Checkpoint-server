@@ -4,15 +4,17 @@ import apiResponse from '@server/utils/apiResponse';
 import { TransformUser, UserModel } from '@server/models/user.model';
 import { GenerateTokenResponse, generateTokenResponse } from '@server/utils/generateTokenResponse';
 import { omit } from '@server/utils/omit';
-import { PhoneValidationModel, CreatedTicket } from '@server/models/phoneValidation.model';
+import { PhoneValidationModel, CreatedPhoneTicket } from '@server/models/phoneValidation.model';
 import { RefreshTokenModel } from '@server/models/refreshToken.model';
 import { CountryCode } from '@server/utils/countryPhoneCodes';
 import { buildPhone } from '@server/utils/buildPhone';
+import { CreatedMailTicket, MailValidationModel } from '@server/models/mailValidation.model';
+import { verifyCodeMail } from '@server/services/mailTemplates/verifyCodeMail';
 
 export default {
   phoneValidationCreate: async (
     req: AppRequestBody<{ phone: string; country: CountryCode }>,
-    res: AppResponse<CreatedTicket>,
+    res: AppResponse<CreatedPhoneTicket>,
     next,
   ) => {
     try {
@@ -37,6 +39,50 @@ export default {
       const fullPhone = buildPhone(phone, country);
 
       const validationTicket = await PhoneValidationModel.has({ phone: fullPhone, code });
+
+      res.status(httpStatus.OK);
+      return res.json(apiResponse.resolve(validationTicket));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  mailValidationCreate: async (
+    req: AppRequestBody<{ mail: string }>,
+    res: AppResponse<Omit<CreatedMailTicket, 'code'>>,
+    next,
+  ) => {
+    try {
+      const { mail } = req.body;
+      const validationTicket = await MailValidationModel.generate(mail);
+
+      try {
+        await res.locals.mailer.send({
+          to: [mail],
+          html: verifyCodeMail({ username: mail, code: validationTicket.code }),
+        });
+      } catch (e) {
+        throw apiResponse.error({
+          message: `Error while sending email: ${e.message}`,
+        });
+      }
+
+      res.status(httpStatus.CREATED);
+      return res.json(apiResponse.resolve(omit(validationTicket, 'code')));
+    } catch (e) {
+      return next(e);
+    }
+  },
+
+  mailValidationCheck: async (
+    req: AppRequestQuery<{ mail: string; code: string }>,
+    res: AppResponse<boolean>,
+    next,
+  ) => {
+    try {
+      const { mail, code } = req.query;
+
+      const validationTicket = await MailValidationModel.has({ mail, code });
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(validationTicket));
@@ -74,13 +120,13 @@ export default {
 
   refreshToken: async (req, res: AppResponse<{ token: GenerateTokenResponse; user: TransformUser }>, next) => {
     try {
-      const { phone, refreshToken } = req.body;
+      const { mail, refreshToken } = req.body;
       const refreshObject = await RefreshTokenModel.findOneAndRemove({
-        phone,
+        mail,
         token: refreshToken,
       });
 
-      const { user, accessToken } = await UserModel.findAndGenerateToken({ phone, refreshObject });
+      const { user, accessToken } = await UserModel.findAndGenerateToken({ mail, refreshObject });
       const token = await generateTokenResponse(user, accessToken);
 
       const userTransformed = user.transform();

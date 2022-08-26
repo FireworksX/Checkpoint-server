@@ -6,6 +6,7 @@ export const MODEL_NAMES = createConstants(
   'City',
   'CategoryField',
   'PhoneValidation',
+  'MailValidation',
   'RefreshToken',
   'User',
   'MediaFile',

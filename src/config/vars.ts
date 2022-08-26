@@ -1,9 +1,9 @@
-import dotenv from 'dotenv'
-import path from 'path'
+import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config({
-  path: path.resolve('.env.local')
-})
+  path: path.resolve('.env.local'),
+});
 
 export default {
   env: process.env.NODE_ENV,
@@ -13,5 +13,9 @@ export default {
   mongo: {
     uri: process.env.NODE_ENV === 'test' ? process.env.MONGO_URI_TESTS : process.env.MONGO_URI,
   },
+  mail: {
+    host: process.env.MAIL_HOST,
+    user: process.env.MAIL_USER,
+    password: process.env.MAIL_PASSWORD,
+  },
 };
-

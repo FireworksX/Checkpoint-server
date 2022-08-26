@@ -27,6 +27,7 @@ export default {
   hasRegisterUser: async (req, res: AppResponse<boolean>, next) => {
     try {
       const findUser = await UserModel.has(req.query);
+      console.log(findUser, req.query);
 
       res.status(httpStatus.OK);
       return res.json(apiResponse.resolve(findUser));
