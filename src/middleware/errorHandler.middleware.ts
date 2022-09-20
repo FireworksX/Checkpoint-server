@@ -3,7 +3,6 @@ import { AppResponse } from '@server/interfaces/ApiInterfaces';
 import httpStatus from 'http-status';
 
 export function errorHandler(error: ErrorOptions | any, _req: any, res: AppResponse<never>, next) {
-  console.error(error);
   let resultError = apiResponse.error({ ...error });
 
   if (error.code === 11000) {

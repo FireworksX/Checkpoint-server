@@ -315,7 +315,7 @@ userSchema.static({
         return { user, accessToken: user.token() };
       }
     } else {
-      err.message = 'Incorrect phone or refreshToken';
+      err.message = 'Incorrect mail or refreshToken';
     }
 
     throw apiResponse.error(err);

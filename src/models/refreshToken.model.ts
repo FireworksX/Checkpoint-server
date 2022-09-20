@@ -42,15 +42,24 @@ refreshTokenSchema.statics = {
   async generate(user: RefreshTokenGenerateUser) {
     const userId = user._id;
     const mail = user.mail;
-    const token = `${userId}.${crypto.randomBytes(40).toString('hex')}`;
-    const expires = dayjs().add(30, 'days').toDate();
-    const tokenObject = new RefreshTokenModel({
-      token,
-      userId,
-      mail,
-      expires,
-    });
-    await tokenObject.save();
+
+    const findRefreshToken = await RefreshTokenModel.findOne({ mail });
+
+    let tokenObject;
+    if (findRefreshToken) {
+      tokenObject = findRefreshToken;
+    } else {
+      const token = `${userId}.${crypto.randomBytes(40).toString('hex')}`;
+      const expires = dayjs().add(30, 'days').toDate();
+      tokenObject = new RefreshTokenModel({
+        token,
+        userId,
+        mail,
+        expires,
+      });
+      await tokenObject.save();
+    }
+
     return tokenObject;
   },
 };

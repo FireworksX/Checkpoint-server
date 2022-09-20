@@ -81,7 +81,6 @@ export default {
 
         bookmarkLocations = await Promise.all(bookmarkLocationsPromises)
 
-        console.log(ids, bookmarkLocationsPromises, bookmarkLocations);
       }
 
       const listOfCityPromises = (await LocationModel.list(params)).map((location) => location.populateTransform());

@@ -121,7 +121,7 @@ export default {
   refreshToken: async (req, res: AppResponse<{ token: GenerateTokenResponse; user: TransformUser }>, next) => {
     try {
       const { mail, refreshToken } = req.body;
-      const refreshObject = await RefreshTokenModel.findOneAndRemove({
+      const refreshObject = await RefreshTokenModel.findOne({
         mail,
         token: refreshToken,
       });
